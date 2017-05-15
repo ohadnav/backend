@@ -99,3 +99,11 @@ Temporary Items
 
 ### Sensitive data (credentials)
 /credentials/
+
+### Maven
+/log/
+/target/
+openapi.json
+
+### External Libraries
+/lib/
