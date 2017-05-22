@@ -13,7 +13,6 @@
     </system-properties>
 
     <env-variables>
-        <env-var name="ENDPOINTS_SERVICE_NAME" value="api.endpoints.${google.cloud.project}.cloud.goog"/>
         <env-var name="GOOGLE_CLOUD_PROJECT" value="${google.cloud.project}"/>
         <env-var name="APPLICATION_NAME" value="${application.name}"/>
     </env-variables>

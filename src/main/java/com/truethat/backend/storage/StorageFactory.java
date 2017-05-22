@@ -18,10 +18,10 @@ import java.util.Collection;
  * Taken from:
  * https://github.com/GoogleCloudPlatform/java-docs-samples/blob/master/storage/json-api/src/main/java/StorageFactory.java
  */
-public class StorageFactory {
+class StorageFactory {
     private static Storage instance = null;
 
-    public static synchronized Storage getService() throws IOException, GeneralSecurityException {
+    static synchronized Storage getService() throws IOException, GeneralSecurityException {
         if (instance == null) {
             instance = buildService();
         }
