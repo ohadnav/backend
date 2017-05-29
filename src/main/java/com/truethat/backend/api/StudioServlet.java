@@ -31,7 +31,7 @@ public class StudioServlet extends HttpServlet {
     private static final Logger           LOG                    = Logger.getLogger(StudioServlet.class.getName());
     private static final DatastoreService DATASTORE_SERVICE      = DatastoreServiceFactory.getDatastoreService();
 
-    private static String bucketName = "truethat-theater";
+    private static String bucketName = "truethat-studio";
 
     @VisibleForTesting
     static void setBucketName(String bucketName) {
