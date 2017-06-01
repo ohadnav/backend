@@ -18,6 +18,7 @@ public class StorageUtilTest extends StorageBaseTest {
 
     @Test
     public void uploadStream() throws Exception {
+        // Uploads the file
         final StorageObject uploaded = StorageUtil.uploadStream(
                 FILENAME, CONTENT_TYPE, new ByteArrayInputStream(new byte[]{(byte) 0, (byte) 1}),
                 bucketName);
@@ -34,6 +35,7 @@ public class StorageUtilTest extends StorageBaseTest {
         // Create a temp file to upload
         File tempFile = File.createTempFile(FILENAME.split("\\.")[0], "txt");
         tempFile.deleteOnExit();
+        // Uploads the file
         final StorageObject uploaded = StorageUtil.uploadStream(
                 FILENAME, CONTENT_TYPE, new FileInputStream(tempFile), bucketName);
         assertEquals(CONTENT_TYPE, uploaded.getContentType());
