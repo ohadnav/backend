@@ -37,7 +37,7 @@ public class StudioServlet extends HttpServlet {
     static final         String           CREDENTIALS_PATH  = "/resources/credentials/";
     private static final Logger           LOG               = Logger.getLogger(StudioServlet.class.getName());
     private static final DatastoreService DATASTORE_SERVICE = DatastoreServiceFactory.getDatastoreService();
-    private static String bucketName = "truethat-studio";
+    private static       String           bucketName        = System.getenv("STUDIO_BUCKET");
     private String privateKey;
 
     @VisibleForTesting
