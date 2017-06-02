@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 @WebServlet(value = "/studio", name = "Studio")
 @MultipartConfig
 public class StudioServlet extends HttpServlet {
-    private static final String           CREDENTIALS_PATH  = "credentials/";
+    private static final String           CREDENTIALS_PATH  = "/resources/credentials/";
     private static final Logger           LOG               = Logger.getLogger(StudioServlet.class.getName());
     private static final DatastoreService DATASTORE_SERVICE = DatastoreServiceFactory.getDatastoreService();
 
@@ -49,6 +49,7 @@ public class StudioServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+        LOG.severe(CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json");
         // Reads credentials file.
         InputStream credentialsStream = getServletContext()
                 .getResourceAsStream(CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json");
@@ -105,12 +106,12 @@ public class StudioServlet extends HttpServlet {
                                  imagePart.getContentType(),
                                  imagePart.getInputStream(),
                                  bucketName);
-        scene.setSignedImageUrl(UrlSigner.getSignedUrl(privateKey, bucketName + "/" + scene.getImagePath()));
+        scene.setImageSignedUrl(UrlSigner.getSignedUrl(privateKey, bucketName + "/" + scene.getImagePath()));
         // Saves the scene to Datastore.
         Entity entity = new Entity(Scene.DATASTORE_KIND);
         entity.setProperty(Scene.DATASTORE_CREATED, scene.getCreated());
         entity.setProperty(Scene.DATASTORE_DIRECTOR_ID, scene.getDirectorId());
-        entity.setProperty(Scene.DATASTORE_IMAGE_SIGNED_URL, scene.getSignedImageUrl());
+        entity.setProperty(Scene.DATASTORE_IMAGE_SIGNED_URL, scene.getImageSignedUrl());
         DATASTORE_SERVICE.put(entity);
         // Updates the scene with the generated key.
         scene.setId(entity.getKey().getId());

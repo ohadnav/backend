@@ -13,5 +13,9 @@ runtime_config:
   jdk: openjdk8
   server: jetty9
 
+# Leveraging Jetty 9 & Servlet 3.1 @WebServlet annotation
+beta_settings:
+  java_quickstart: true
+
 manual_scaling:
   instances: 1

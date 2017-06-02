@@ -1,6 +1,7 @@
 package com.truethat.backend.model;
 
 import com.google.appengine.api.datastore.Entity;
+import com.google.gson.annotations.SerializedName;
 import com.truethat.backend.common.Util;
 
 import java.util.Date;
@@ -30,19 +31,21 @@ public class Scene {
     // Scene ID, i.e datastore key.
     private long id;
     // ID of the Scene director (i.e. its creator).
+    @SerializedName("director_id")
     private long directorId;
 
     // Client created UTC timestamp
     private Date created;
 
     // Authenticated query string for the scene image, which is stored in Google Storage.
-    private String signedImageUrl;
+    @SerializedName("image_signed_url")
+    private String imageSignedUrl;
 
     public Scene(Entity entity) {
         id = entity.getKey().getId();
         directorId = (Long) entity.getProperty(Scene.DATASTORE_DIRECTOR_ID);
         created = (Date) entity.getProperty(Scene.DATASTORE_CREATED);
-        signedImageUrl = (String) entity.getProperty(Scene.DATASTORE_IMAGE_SIGNED_URL);
+        imageSignedUrl = (String) entity.getProperty(Scene.DATASTORE_IMAGE_SIGNED_URL);
     }
 
     public Scene(Long directorId, Date created) {
@@ -66,12 +69,12 @@ public class Scene {
         return created;
     }
 
-    public String getSignedImageUrl() {
-        return signedImageUrl;
+    public String getImageSignedUrl() {
+        return imageSignedUrl;
     }
 
-    public void setSignedImageUrl(String signedImageUrl) {
-        this.signedImageUrl = signedImageUrl;
+    public void setImageSignedUrl(String imageSignedUrl) {
+        this.imageSignedUrl = imageSignedUrl;
     }
 
     /**
@@ -91,7 +94,7 @@ public class Scene {
         }
         final Scene other = (Scene) obj;
         return id == other.id && directorId == other.directorId &&
-               Objects.equals(signedImageUrl, other.signedImageUrl) && created.equals(other.created);
+               Objects.equals(imageSignedUrl, other.imageSignedUrl) && created.equals(other.created);
     }
 
     @Override

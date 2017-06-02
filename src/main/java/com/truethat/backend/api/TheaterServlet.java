@@ -29,7 +29,6 @@ public class TheaterServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Query query = new Query(Scene.DATASTORE_KIND).addSort(Scene.DATASTORE_CREATED, Query.SortDirection.DESCENDING);
-        // [END queries_and_indexes_example_1]
         List<Entity> result = DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(SCENES_LIMIT));
         List<Scene> scenes = result.stream().map(Scene::new).collect(Collectors.toList());
         resp.getWriter().print(Util.GSON.toJson(scenes));
