@@ -34,8 +34,7 @@ public class StorageUtil {
 
         // Do the insert
         Storage client = StorageFactory.getService();
-        Storage.Objects.Insert insertRequest = client.objects().insert(
-                bucketName, objectMetadata, contentStream);
+        Storage.Objects.Insert insertRequest = client.objects().insert(bucketName, objectMetadata, contentStream);
 
         return insertRequest.execute();
     }
