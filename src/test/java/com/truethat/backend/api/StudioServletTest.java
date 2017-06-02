@@ -65,9 +65,9 @@ public class StudioServletTest extends StorageBaseTest {
         datastoreService = DatastoreServiceFactory.getDatastoreService();
         studioServlet = new StudioServlet();
         // Setting mock server context.
-        when(mockServletContext.getResourceAsStream("credentials/" + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json"))
-                .thenReturn(new FileInputStream(
-                        "src/main/resources/credentials/" + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json"));
+        when(mockServletContext.getResourceAsStream(
+                StudioServlet.CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json"))
+                .thenReturn(new FileInputStream(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")));
         when(mockServletConfig.getServletContext()).thenReturn(mockServletContext);
         studioServlet.init(mockServletConfig);
         StudioServlet.setBucketName(bucketName);

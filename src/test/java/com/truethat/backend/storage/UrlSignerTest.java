@@ -23,11 +23,9 @@ public class UrlSignerTest extends StorageBaseTest {
 
     private static String privateKey;
 
-
     @BeforeClass
     public static void beforeClass() throws Exception {
-        FileInputStream fileInputStream = new FileInputStream(
-                "src/main/resources/credentials/" + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json");
+        FileInputStream fileInputStream = new FileInputStream(System.getenv("GOOGLE_APPLICATION_CREDENTIALS"));
         String credentialsString = Util.inputStreamToString(fileInputStream);
         JsonObject credentials =
                 new GsonBuilder().create().fromJson(credentialsString, JsonElement.class).getAsJsonObject();

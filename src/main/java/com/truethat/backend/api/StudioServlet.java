@@ -33,12 +33,11 @@ import java.util.logging.Logger;
 @WebServlet(value = "/studio", name = "Studio")
 @MultipartConfig
 public class StudioServlet extends HttpServlet {
-    private static final String           CREDENTIALS_PATH  = "/resources/credentials/";
+    @VisibleForTesting
+    static final         String           CREDENTIALS_PATH  = "/resources/credentials/";
     private static final Logger           LOG               = Logger.getLogger(StudioServlet.class.getName());
     private static final DatastoreService DATASTORE_SERVICE = DatastoreServiceFactory.getDatastoreService();
-
     private static String bucketName = "truethat-studio";
-
     private String privateKey;
 
     @VisibleForTesting
@@ -49,7 +48,6 @@ public class StudioServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        LOG.severe(CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json");
         // Reads credentials file.
         InputStream credentialsStream = getServletContext()
                 .getResourceAsStream(CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json");
