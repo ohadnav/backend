@@ -13,7 +13,7 @@
 *.DS_Store
 
 ### Sensitive data (credentials)
-/src/main/webapp/resources/credentials/
+/src/main/resources/credentials/
 
 ### Maven
 /target/

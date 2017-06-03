@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 @MultipartConfig
 public class StudioServlet extends HttpServlet {
     @VisibleForTesting
-    static final         String           CREDENTIALS_PATH  = "/resources/credentials/";
+    static final         String           CREDENTIALS_PATH  = "credentials/";
     private static final Logger           LOG               = Logger.getLogger(StudioServlet.class.getName());
     private static final DatastoreService DATASTORE_SERVICE = DatastoreServiceFactory.getDatastoreService();
     private static       String           bucketName        = System.getenv("STUDIO_BUCKET");
@@ -49,8 +49,8 @@ public class StudioServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         // Reads credentials file.
-        InputStream credentialsStream = getServletContext()
-                .getResourceAsStream(CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json");
+        InputStream credentialsStream = Thread.currentThread().getContextClassLoader()
+                                              .getResourceAsStream(CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json");
         try {
             String credentialsString = Util.inputStreamToString(credentialsStream);
             JsonObject credentials =
