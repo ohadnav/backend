@@ -12,32 +12,50 @@ import java.util.Objects;
  */
 public class Scene {
     /**
-     * Multipart HTTP request part names, as used by {@link com.truethat.backend.api.StudioServlet}
+     * Multipart HTTP request part names, as used by {@link com.truethat.backend.servlet.StudioServlet}.
+     *
+     * @android <a>https://goo.gl/1R2ySJ</a>
      */
     public static final String IMAGE_PART                 = "image";
     public static final String DIRECTOR_ID_PART           = "director_id";
     public static final String CREATED_PART               = "created";
-    // Datastore kind
+    /**
+     * Datastore kind.
+     */
     public static final String DATASTORE_KIND             = "Scene";
-    // Column names within Datastore.
+    /**
+     * Datastore column names.
+     *
+     * @android <a>https://goo.gl/g8davi</a>
+     */
     public static final String DATASTORE_CREATED          = "created";
     public static final String DATASTORE_DIRECTOR_ID      = "directorId";
     public static final String DATASTORE_IMAGE_SIGNED_URL = "imageSignedUrl";
-    // Sub path for scene images within the storage bucket.
+    /**
+     * Sub path for scene images within the storage bucket.
+     */
     private static final String STORAGE_IMAGES_PATH        = "scene/images/";
 
     private static final String DEFAULT_IMAGE_TYPE = "jpg";
 
-    // Scene ID, i.e datastore key.
+    /**
+     * Scene ID, as defined by its datastore key.
+     */
     private long id;
-    // ID of the Scene director (i.e. its creator).
+    /**
+     * ID of the Scene director (i.e. its creator).
+     */
     @SerializedName("director_id")
     private long directorId;
 
-    // Client created UTC timestamp
+    /**
+     * Client created UTC timestamp
+     */
     private Date created;
 
-    // Authenticated query string for the scene image, which is stored in Google Storage.
+    /**
+     * Authenticated query string for the scene image, which is stored in Google Storage.
+     */
     @SerializedName("image_signed_url")
     private String imageSignedUrl;
 

@@ -1,4 +1,4 @@
-package com.truethat.backend.api;
+package com.truethat.backend.servlet;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -28,6 +28,8 @@ import java.util.logging.Logger;
 
 /**
  * Proudly created by ohad on 07/05/2017.
+ *
+ * @android <a>https://goo.gl/1R2ySJ</a>
  */
 
 @WebServlet(value = "/studio", name = "Studio")

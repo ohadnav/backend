@@ -1,12 +1,15 @@
-package com.truethat.backend.api;
+package com.truethat.backend.servlet;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.Emotion;
+import com.truethat.backend.model.ReactableEvent;
 import com.truethat.backend.model.Scene;
 import org.junit.After;
 import org.junit.Before;
@@ -22,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.when;
 
 /**
@@ -33,6 +37,9 @@ public class TheaterServletTest {
     private static final long                   DIRECTOR_ID      = 10;
     private static final Date                   CREATED          = new Date();
     private static final String                 IMAGE_SIGNED_URL = "viruses.com";
+    private static final long                   USER_ID          = 20;
+    private static final long                   SCENE_ID         = 7;
+    private static final Date                   TIMESTAMP        = new Date();
     private static DatastoreService    datastoreService;
     @Mock
     private        HttpServletRequest  mockRequest;
@@ -51,12 +58,9 @@ public class TheaterServletTest {
         HELPER.setUp();
         datastoreService = DatastoreServiceFactory.getDatastoreService();
         theaterServlet = new TheaterServlet();
-
         responseWriter = new StringWriter();
         when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
-
     }
-
 
     /**
      * Stops the local Datastore emulator.
@@ -106,5 +110,51 @@ public class TheaterServletTest {
         for (int i = TheaterServlet.SCENES_LIMIT; i > 0; i--) {
             assertEquals(new Date(CREATED.getTime() + i), scenes.get(TheaterServlet.SCENES_LIMIT - i).getCreated());
         }
+    }
+
+    @Test
+    public void doPost_viewEvent() throws Exception {
+        // Add a scene to datastore.
+        when(mockRequest.getParameter(ReactableEvent.USER_ID_FIELD)).thenReturn(Long.toString(USER_ID));
+        when(mockRequest.getParameter(ReactableEvent.SCENE_ID_FIELD)).thenReturn(Long.toString(SCENE_ID));
+        when(mockRequest.getParameter(ReactableEvent.TIMESTAMP_FIELD)).thenReturn(Util.GSON.toJson(TIMESTAMP));
+        when(mockRequest.getParameter(ReactableEvent.EVENT_CODE_FIELD))
+                .thenReturn(Integer.toString(ReactableEvent.REACTABLE_VIEW));
+        when(mockRequest.getParameter(ReactableEvent.REACTION_FIELD)).thenReturn(null);
+        // Sends the POST request
+        theaterServlet.doPost(mockRequest, mockResponse);
+        // Retrieves the saves event from datastore.
+        Entity savedEntity = datastoreService.prepare(new Query(ReactableEvent.DATASTORE_KIND)).asSingleEntity();
+        assertEquals(Long.toString(USER_ID), savedEntity.getProperty(ReactableEvent.DATASTORE_USER_ID));
+        assertEquals(Long.toString(SCENE_ID), savedEntity.getProperty(ReactableEvent.DATASTORE_SCENE_ID));
+        assertEquals(TIMESTAMP, Util.GSON
+                .fromJson(savedEntity.getProperty(ReactableEvent.DATASTORE_TIMESTAMP).toString(), Date.class));
+        assertEquals(Integer.toString(ReactableEvent.REACTABLE_VIEW),
+                     savedEntity.getProperty(ReactableEvent.DATASTORE_EVENT_CODE));
+        assertNull(savedEntity.getProperty(ReactableEvent.DATASTORE_REACTION));
+    }
+
+    @Test
+    public void doPost_reactionEvent() throws Exception {
+        // Add a scene to datastore.
+        when(mockRequest.getParameter(ReactableEvent.USER_ID_FIELD)).thenReturn(Long.toString(USER_ID));
+        when(mockRequest.getParameter(ReactableEvent.SCENE_ID_FIELD)).thenReturn(Long.toString(SCENE_ID));
+        when(mockRequest.getParameter(ReactableEvent.TIMESTAMP_FIELD)).thenReturn(Util.GSON.toJson(TIMESTAMP));
+        when(mockRequest.getParameter(ReactableEvent.EVENT_CODE_FIELD))
+                .thenReturn(Integer.toString(ReactableEvent.REACTABLE_REACTION));
+        when(mockRequest.getParameter(ReactableEvent.REACTION_FIELD))
+                .thenReturn(Integer.toString(Emotion.HAPPY.getCode()));
+        // Sends the POST request
+        theaterServlet.doPost(mockRequest, mockResponse);
+        // Retrieves the saves event from datastore.
+        Entity savedEntity = datastoreService.prepare(new Query(ReactableEvent.DATASTORE_KIND)).asSingleEntity();
+        assertEquals(Long.toString(USER_ID), savedEntity.getProperty(ReactableEvent.DATASTORE_USER_ID));
+        assertEquals(Long.toString(SCENE_ID), savedEntity.getProperty(ReactableEvent.DATASTORE_SCENE_ID));
+        assertEquals(TIMESTAMP, Util.GSON
+                .fromJson(savedEntity.getProperty(ReactableEvent.DATASTORE_TIMESTAMP).toString(), Date.class));
+        assertEquals(Integer.toString(ReactableEvent.REACTABLE_REACTION),
+                     savedEntity.getProperty(ReactableEvent.DATASTORE_EVENT_CODE));
+        assertEquals(Integer.toString(Emotion.HAPPY.getCode()),
+                     savedEntity.getProperty(ReactableEvent.DATASTORE_REACTION));
     }
 }
