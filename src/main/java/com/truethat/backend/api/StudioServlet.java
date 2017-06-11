@@ -79,9 +79,9 @@ public class StudioServlet extends HttpServlet {
         try {
             Scene saved = saveScene(req);
             resp.getWriter().print(Util.GSON.toJson(saved));
-        } catch (GeneralSecurityException e) {
-            LOG.severe("Bad security while saving scene: " + e.getMessage());
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Security exception thrown.");
+        } catch (Exception e) {
+            LOG.severe("Oh oh... " + e.getMessage());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
@@ -100,6 +100,7 @@ public class StudioServlet extends HttpServlet {
         Scene scene = new Scene(Long.parseLong(Util.inputStreamToString(directorPart.getInputStream())),
                                 new Date(Long.parseLong(Util.inputStreamToString(createdPart.getInputStream()))));
         // Saves the image to storage.
+        // TODO(ohad): couple storage upload success with datastore saving success.
         StorageUtil.uploadStream(scene.getImagePath(),
                                  imagePart.getContentType(),
                                  imagePart.getInputStream(),

@@ -13,7 +13,7 @@ import java.io.InputStreamReader;
  * Proudly created by ohad on 01/06/2017.
  */
 public class Util {
-    public static final Gson GSON = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSz").create();
+    public static final Gson GSON = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").create();
 
     public static String inputStreamToString(InputStream inputStream) throws IOException {
         return CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));

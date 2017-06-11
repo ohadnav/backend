@@ -14,15 +14,15 @@ public class Scene {
     /**
      * Multipart HTTP request part names, as used by {@link com.truethat.backend.api.StudioServlet}
      */
-    public static final  String IMAGE_PART                 = "scene_image";
-    public static final  String DIRECTOR_ID_PART           = "director_id";
-    public static final  String CREATED_PART               = "created";
+    public static final String IMAGE_PART                 = "image";
+    public static final String DIRECTOR_ID_PART           = "director_id";
+    public static final String CREATED_PART               = "created";
     // Datastore kind
-    public static final  String DATASTORE_KIND             = "Scene";
+    public static final String DATASTORE_KIND             = "Scene";
     // Column names within Datastore.
-    public static final  String DATASTORE_CREATED          = "created";
-    public static final  String DATASTORE_DIRECTOR_ID      = "directorId";
-    public static final  String DATASTORE_IMAGE_SIGNED_URL = "imageSignedUrl";
+    public static final String DATASTORE_CREATED          = "created";
+    public static final String DATASTORE_DIRECTOR_ID      = "directorId";
+    public static final String DATASTORE_IMAGE_SIGNED_URL = "imageSignedUrl";
     // Sub path for scene images within the storage bucket.
     private static final String STORAGE_IMAGES_PATH        = "scene/images/";
 
