@@ -1,79 +1,111 @@
 package com.truethat.backend.model;
 
-import com.google.gson.annotations.SerializedName;
-
+import com.google.appengine.api.datastore.Entity;
+import com.google.common.annotations.VisibleForTesting;
+import java.util.Date;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Date;
 
 /**
  * Proudly created by ohad on 11/06/2017.
+ *
+ * @android <a></a>
  */
 public class ReactableEvent {
-    /**
-     * HTTP request field names for {@link com.truethat.backend.servlet.TheaterServlet#doPost(HttpServletRequest, HttpServletResponse)}.
-     *
-     * @android <a>https://goo.gl/xsORJL</a>
-     */
-    public static final String USER_ID_FIELD = "user_id";
-    public static final String SCENE_ID_FIELD = "scene_id";
-    public static final String TIMESTAMP_FIELD = "timestamp";
-    public static final String EVENT_CODE_FIELD = "event_code";
-    public static final String REACTION_FIELD = "reaction";
-    /**
-     * Datastore kind.
-     */
-    public static final String DATASTORE_KIND       = "ReactableEvent";
-    /**
-     * Datastore column names.
-     *
-     * @android <a>https://goo.gl/xsORJL</a>
-     */
-    public static final String DATASTORE_TIMESTAMP  = "timestamp";
-    public static final String DATASTORE_USER_ID    = "userId";
-    public static final String DATASTORE_SCENE_ID   = "sceneId";
-    public static final String DATASTORE_EVENT_CODE = "eventCode";
-    public static final String DATASTORE_REACTION   = "reaction";
+  /**
+   * HTTP request field names for {@link com.truethat.backend.servlet.TheaterServlet#doPost(HttpServletRequest,
+   * HttpServletResponse)}.
+   *
+   * @android <a>https://goo.gl/xsORJL</a>
+   */
+  public static final String EVENT_FIELD = "event";
+  /**
+   * Datastore kind.
+   */
+  public static final String DATASTORE_KIND = "ReactableEvent";
+  /**
+   * Datastore column names.
+   */
+  public static final String DATASTORE_TIMESTAMP = "timestamp";
+  public static final String DATASTORE_USER_ID = "userId";
+  public static final String DATASTORE_SCENE_ID = "sceneId";
+  public static final String DATASTORE_EVENT_TYPE = "eventType";
+  public static final String DATASTORE_REACTION = "reaction";
 
-    /**
-     * Event codes.
-     *
-     * @android <a>https://goo.gl/8B3Pgc</a>
-     */
-    public static final int REACTABLE_VIEW     = 100;
-    public static final int REACTABLE_REACTION = 101;
+  /**
+   * ReactableEvent ID, as defined by its datastore key.
+   */
+  private long id;
 
-    /**
-     * ReactableEvent ID, as defined by its datastore key.
-     */
-    private long id;
+  /**
+   * Client UTC timestamp
+   */
+  private Date timestamp;
 
-    /**
-     * Client UTC timestamp
-     */
-    private Date timestamp;
+  /**
+   * ID of the user that triggered the event.
+   */
+  private long userId;
 
-    /**
-     * ID of the user that triggered the event.
-     */
-    @SerializedName("user_id")
-    private long userId;
+  /**
+   * For {@link EventType#REACTABLE_REACTION}.
+   * <p>
+   * Must be null for irrelevant events (such as {@link EventType#REACTABLE_VIEW}).
+   */
+  private Emotion reaction;
 
-    /**
-     * For {@link #REACTABLE_REACTION}, must be null for irrelevant events (such as {@link #REACTABLE_VIEW}).
-     */
-    private Emotion reaction;
+  /**
+   * Event type, to sync with frontend clients.
+   */
+  private EventType eventType;
 
-    /**
-     * Of the {@link Scene} that was interacted with.
-     */
-    @SerializedName("scene_id")
-    private long sceneId;
+  /**
+   * Of the {@link Scene} that was interacted with.
+   */
+  private long sceneId;
 
-    public ReactableEvent(Date timestamp, long userId, Emotion reaction, long sceneId) {
-        this.timestamp = timestamp;
-        this.userId = userId;
-        this.reaction = reaction;
-        this.sceneId = sceneId;
+  @VisibleForTesting
+  public ReactableEvent(long userId, long sceneId, Date timestamp, EventType eventType, @Nullable
+      Emotion reaction) {
+    this.timestamp = timestamp;
+    this.userId = userId;
+    this.reaction = reaction;
+    this.eventType = eventType;
+    this.sceneId = sceneId;
+  }
+
+  public Entity toEntity() {
+    Entity entity = new Entity(ReactableEvent.DATASTORE_KIND);
+    entity.setProperty(ReactableEvent.DATASTORE_SCENE_ID, sceneId);
+    entity.setProperty(ReactableEvent.DATASTORE_TIMESTAMP, timestamp);
+    if (eventType != null) {
+      entity.setProperty(ReactableEvent.DATASTORE_EVENT_TYPE, eventType.getCode());
     }
+    entity.setProperty(ReactableEvent.DATASTORE_USER_ID, userId);
+    if (reaction != null) {
+      entity.setProperty(ReactableEvent.DATASTORE_REACTION, reaction.getCode());
+    }
+    return entity;
+  }
+
+  public Date getTimestamp() {
+    return timestamp;
+  }
+
+  public long getUserId() {
+    return userId;
+  }
+
+  public Emotion getReaction() {
+    return reaction;
+  }
+
+  public EventType getEventType() {
+    return eventType;
+  }
+
+  public long getSceneId() {
+    return sceneId;
+  }
 }

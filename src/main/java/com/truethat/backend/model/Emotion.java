@@ -6,17 +6,16 @@ package com.truethat.backend.model;
  * @android <a>https://goo.gl/Qjv4gr</a>
  */
 public enum Emotion {
-    HAPPY(1),
-    SAD(2);
+  HAPPY(1),
+  SAD(2);
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private int code;
+  private int code;
 
-    Emotion(int code) {
-        this.code = code;
-    }
+  Emotion(int code) {
+    this.code = code;
+  }
 
-    public int getCode() {
-        return code;
-    }
+  public int getCode() {
+    return code;
+  }
 }
