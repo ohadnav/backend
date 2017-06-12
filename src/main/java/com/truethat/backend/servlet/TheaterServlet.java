@@ -50,8 +50,7 @@ public class TheaterServlet extends HttpServlet {
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
-    ReactableEvent reactableEvent =
-        Util.GSON.fromJson(req.getParameter(ReactableEvent.EVENT_FIELD), ReactableEvent.class);
+    ReactableEvent reactableEvent = Util.GSON.fromJson(req.getReader(), ReactableEvent.class);
     DATASTORE_SERVICE.put(reactableEvent.toEntity());
   }
 }

@@ -4,8 +4,6 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Date;
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Proudly created by ohad on 11/06/2017.
@@ -13,13 +11,6 @@ import javax.servlet.http.HttpServletResponse;
  * @android <a>https://goo.gl/Itf035</a>
  */
 public class ReactableEvent {
-  /**
-   * HTTP request field names for {@link com.truethat.backend.servlet.TheaterServlet#doPost(HttpServletRequest,
-   * HttpServletResponse)}.
-   *
-   * @android <a>https://goo.gl/xsORJL</a>
-   */
-  public static final String EVENT_FIELD = "event";
   /**
    * Datastore kind.
    */

@@ -12,7 +12,9 @@ import com.truethat.backend.model.Emotion;
 import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.ReactableEvent;
 import com.truethat.backend.model.Scene;
+import java.io.BufferedReader;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Date;
 import java.util.List;
@@ -117,8 +119,8 @@ public class TheaterServletTest {
     ReactableEvent reactableEvent =
         new ReactableEvent(USER_ID, SCENE_ID, TIMESTAMP, EventType.REACTABLE_VIEW, null);
     // Mocks a ReactableEvent field.
-    when(mockRequest.getParameter(ReactableEvent.EVENT_FIELD)).thenReturn(
-        Util.GSON.toJson(reactableEvent));
+    when(mockRequest.getReader()).thenReturn(
+        new BufferedReader(new StringReader(Util.GSON.toJson(reactableEvent))));
     // Sends the POST request
     theaterServlet.doPost(mockRequest, mockResponse);
     // Retrieves the saves event from datastore.
@@ -133,8 +135,8 @@ public class TheaterServletTest {
         new ReactableEvent(USER_ID, SCENE_ID, TIMESTAMP, EventType.REACTABLE_REACTION,
             Emotion.HAPPY);
     // Mocks a ReactableEvent field.
-    when(mockRequest.getParameter(ReactableEvent.EVENT_FIELD)).thenReturn(
-        Util.GSON.toJson(reactableEvent));
+    when(mockRequest.getReader()).thenReturn(
+        new BufferedReader(new StringReader(Util.GSON.toJson(reactableEvent))));
     // Sends the POST request
     theaterServlet.doPost(mockRequest, mockResponse);
     // Retrieves the saves event from datastore.

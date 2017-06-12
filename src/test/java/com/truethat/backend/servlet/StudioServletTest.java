@@ -13,7 +13,6 @@ import com.truethat.backend.model.Scene;
 import com.truethat.backend.storage.StorageBaseTest;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
@@ -119,38 +118,32 @@ public class StudioServletTest extends StorageBaseTest {
     assertNotNull(savedEntity.getProperty(Scene.DATASTORE_IMAGE_SIGNED_URL));
   }
 
-  @Test(expected = IOException.class)
+  @Test
   public void sceneNotSaved_noImage() throws Exception {
     when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(null);
 
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts the request had failed
-    assertEquals(HttpServletResponse.SC_BAD_REQUEST, mockResponse.getStatus());
     // Asserts there is no response.
     assertTrue(Strings.isNullOrEmpty(responseWriter.toString()));
   }
 
-  @Test(expected = IOException.class)
+  @Test
   public void sceneNotSaved_noDirectorId() throws Exception {
     when(mockRequest.getPart(Scene.DIRECTOR_ID_PART)).thenReturn(null);
 
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts the request had failed
-    assertEquals(HttpServletResponse.SC_BAD_REQUEST, mockResponse.getStatus());
     // Asserts there is no response.
     assertTrue(Strings.isNullOrEmpty(responseWriter.toString()));
   }
 
-  @Test(expected = IOException.class)
+  @Test
   public void sceneNotSaved_noCreated() throws Exception {
     when(mockRequest.getPart(Scene.CREATED_PART)).thenReturn(null);
 
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts the request had failed
-    assertEquals(HttpServletResponse.SC_BAD_REQUEST, mockResponse.getStatus());
     // Asserts there is no response.
     assertTrue(Strings.isNullOrEmpty(responseWriter.toString()));
   }
