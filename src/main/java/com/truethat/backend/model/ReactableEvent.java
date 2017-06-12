@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Proudly created by ohad on 11/06/2017.
  *
- * @android <a></a>
+ * @android <a>https://goo.gl/Itf035</a>
  */
 public class ReactableEvent {
   /**

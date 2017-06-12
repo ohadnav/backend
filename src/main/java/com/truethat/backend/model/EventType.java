@@ -3,7 +3,7 @@ package com.truethat.backend.model;
 /**
  * Proudly created by ohad on 12/06/2017.
  *
- * @android <a>https://goo.gl/8B3Pgc</a>
+ * @android <a>https://goo.gl/Bc2Fa8</a>
  */
 public enum EventType {
   /**
