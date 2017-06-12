@@ -36,7 +36,7 @@ public class ReactableEvent {
   /**
    * ReactableEvent ID, as defined by its datastore key.
    */
-  private long id;
+  @SuppressWarnings("unused") private long id;
 
   /**
    * Client UTC timestamp
