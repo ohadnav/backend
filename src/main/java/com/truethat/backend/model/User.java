@@ -7,6 +7,8 @@ import javax.annotation.Nullable;
 
 /**
  * Proudly created by ohad on 12/06/2017.
+ *
+ * @android https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/auth/User.java
  */
 public class User {
   /**
