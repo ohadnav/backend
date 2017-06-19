@@ -22,7 +22,8 @@ public class User {
 
   public static final String DATASTORE_PHONE_NUMBER = "phoneNumber";
   public static final String DATASTORE_DEVICE_ID = "deviceId";
-  public static final String DATASTORE_NAME = "name";
+  public static final String DATASTORE_FIRST_NAME = "firstName";
+  public static final String DATASTORE_LAST_NAME = "lastName";
 
   private Date joined;
 
@@ -30,15 +31,20 @@ public class User {
 
   private String deviceId;
 
-  private String name;
+  private String firstName;
+
+  private String lastName;
   /**
    * Client ID, should match datastore key.
    */
   @SuppressWarnings({"unused", "FieldCanBeLocal"}) private Long id;
 
-  @VisibleForTesting public User(@Nullable String phoneNumber, @Nullable String deviceId) {
+  @VisibleForTesting public User(@Nullable String phoneNumber, @Nullable String deviceId,
+      @Nullable String firstName, @Nullable String lastName) {
     this.phoneNumber = phoneNumber;
     this.deviceId = deviceId;
+    this.firstName = firstName;
+    this.lastName = lastName;
   }
 
   public Entity toEntity() {
@@ -51,8 +57,11 @@ public class User {
     if (deviceId != null) {
       entity.setProperty(DATASTORE_DEVICE_ID, deviceId);
     }
-    if (name !=null) {
-      entity.setProperty(DATASTORE_NAME, name);
+    if (firstName != null) {
+      entity.setProperty(DATASTORE_FIRST_NAME, firstName);
+    }
+    if (lastName != null) {
+      entity.setProperty(DATASTORE_LAST_NAME, lastName);
     }
     return entity;
   }
@@ -71,5 +80,13 @@ public class User {
 
   public String getDeviceId() {
     return deviceId;
+  }
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public String getLastName() {
+    return lastName;
   }
 }

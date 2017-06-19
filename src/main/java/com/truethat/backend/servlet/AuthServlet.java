@@ -46,7 +46,7 @@ public class AuthServlet extends HttpServlet {
         shouldCreateNewUser = false;
       }
     }
-    if (shouldCreateNewUser) {
+    if (shouldCreateNewUser || updateIfShould(toRespondEntity, userEntity)) {
       DATASTORE_SERVICE.put(toRespondEntity);
     }
     // Updates user ID, and responds it to client.
@@ -82,5 +82,46 @@ public class AuthServlet extends HttpServlet {
       query = null;
     }
     return query;
+  }
+
+  /**
+   * Updates {@code existing} with fresh data from {@code fromClient}. More technically, looks for
+   * non-null fields in {@code fromClient} that have different values than {@code existing}.
+   *
+   * @param existing {@link User} entity that is found in datastore
+   * @param fromClient {@link User} entity that was provided by the client for authentication.
+   * @return whether changes were applied
+   */
+  private boolean updateIfShould(Entity existing, Entity fromClient) {
+    boolean updated = false;
+    if (fromClient.getProperty(User.DATASTORE_PHONE_NUMBER) != null &&
+        existing.getProperty(User.DATASTORE_PHONE_NUMBER) != fromClient.getProperty(
+            User.DATASTORE_PHONE_NUMBER)) {
+      existing.setProperty(User.DATASTORE_PHONE_NUMBER,
+          fromClient.getProperty(User.DATASTORE_PHONE_NUMBER));
+      updated = true;
+    }
+    if (fromClient.getProperty(User.DATASTORE_FIRST_NAME) != null &&
+        existing.getProperty(User.DATASTORE_FIRST_NAME) != fromClient.getProperty(
+            User.DATASTORE_FIRST_NAME)) {
+      existing.setProperty(User.DATASTORE_FIRST_NAME,
+          fromClient.getProperty(User.DATASTORE_FIRST_NAME));
+      updated = true;
+    }
+    if (fromClient.getProperty(User.DATASTORE_LAST_NAME) != null &&
+        existing.getProperty(User.DATASTORE_LAST_NAME) != fromClient.getProperty(
+            User.DATASTORE_LAST_NAME)) {
+      existing.setProperty(User.DATASTORE_LAST_NAME,
+          fromClient.getProperty(User.DATASTORE_LAST_NAME));
+      updated = true;
+    }
+    if (fromClient.getProperty(User.DATASTORE_DEVICE_ID) != null &&
+        existing.getProperty(User.DATASTORE_DEVICE_ID) != fromClient.getProperty(
+            User.DATASTORE_DEVICE_ID)) {
+      existing.setProperty(User.DATASTORE_DEVICE_ID,
+          fromClient.getProperty(User.DATASTORE_DEVICE_ID));
+      updated = true;
+    }
+    return updated;
   }
 }
