@@ -7,15 +7,18 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.common.base.Strings;
+import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Scene;
+import com.truethat.backend.model.User;
 import com.truethat.backend.storage.StorageBaseTest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
+import java.util.List;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -37,7 +40,8 @@ public class StudioServletTest extends StorageBaseTest {
   private static final LocalServiceTestHelper HELPER =
       new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
   private static final long DIRECTOR_ID = 123L;
-  private static final long CREATED = new Date().getTime();
+  private static final User USER = new User(DIRECTOR_ID);
+  private static final Date CREATED = new Date();
   private static final String CONTENT_TYPE = "image/jpeg";
   @Mock
   private ServletConfig mockServletConfig;
@@ -74,20 +78,6 @@ public class StudioServletTest extends StorageBaseTest {
     when(mockServletConfig.getServletContext()).thenReturn(mockServletContext);
     studioServlet.init(mockServletConfig);
     StudioServlet.setBucketName(bucketName);
-
-    // Initializing request mock
-    File file = new File("src/test/resources/api/1x1_pixel.jpg");
-    when(mockImagePart.getContentType()).thenReturn(CONTENT_TYPE);
-    when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(file));
-    when(mockCreatedPart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(String.valueOf(CREATED)));
-    when(mockDirectorPart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(String.valueOf(DIRECTOR_ID)));
-    when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(mockImagePart);
-    when(mockRequest.getPart(Scene.CREATED_PART)).thenReturn(mockCreatedPart);
-    when(mockRequest.getPart(Scene.DIRECTOR_ID_PART)).thenReturn(mockDirectorPart);
-    responseWriter = new StringWriter();
-    when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
   }
 
   /**
@@ -101,13 +91,14 @@ public class StudioServletTest extends StorageBaseTest {
 
   @Test
   public void sceneSaved() throws Exception {
+    preparePost();
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
     // Reads responded scene ID.
     String response = responseWriter.toString();
     Scene scene = Util.GSON.fromJson(response, Scene.class);
     assertEquals(DIRECTOR_ID, scene.getDirectorId());
-    assertEquals(CREATED, scene.getCreated().getTime());
+    assertEquals(CREATED, scene.getCreated());
     // Asserts that the scene's image is saved. If it's not uploaded, then an exception should be thrown.
     client.objects().get(bucketName, scene.getImagePath()).execute();
     // Asserts that the scene was saved into the Datastore.
@@ -120,6 +111,7 @@ public class StudioServletTest extends StorageBaseTest {
 
   @Test
   public void sceneNotSaved_noImage() throws Exception {
+    preparePost();
     when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(null);
 
     // Executes the POST request.
@@ -130,6 +122,7 @@ public class StudioServletTest extends StorageBaseTest {
 
   @Test
   public void sceneNotSaved_noDirectorId() throws Exception {
+    preparePost();
     when(mockRequest.getPart(Scene.DIRECTOR_ID_PART)).thenReturn(null);
 
     // Executes the POST request.
@@ -140,11 +133,56 @@ public class StudioServletTest extends StorageBaseTest {
 
   @Test
   public void sceneNotSaved_noCreated() throws Exception {
+    preparePost();
     when(mockRequest.getPart(Scene.CREATED_PART)).thenReturn(null);
 
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
     // Asserts there is no response.
     assertTrue(Strings.isNullOrEmpty(responseWriter.toString()));
+  }
+
+  @Test public void getRepertoire() throws Exception {
+    // Save reactables
+    for (int i = 0; i < StudioServlet.SCENES_LIMIT + 1; i++) {
+      Entity entity = new Entity(Scene.DATASTORE_KIND);
+      entity.setProperty(Scene.DATASTORE_CREATED, new Date(CREATED.getTime() + i));
+      entity.setProperty(Scene.DATASTORE_DIRECTOR_ID, DIRECTOR_ID);
+      datastoreService.put(entity);
+    }
+    prepareGet();
+    studioServlet.doGet(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Scene> scenes = Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
+    }.getType());
+    // Asserts no more than StudioServlet.SCENES_LIMIT are responded.
+    assertEquals(StudioServlet.SCENES_LIMIT, scenes.size());
+    // Asserts the scenes are sorted by recency.
+    for (int i = StudioServlet.SCENES_LIMIT; i > 0; i--) {
+      assertEquals(CREATED.getTime() + i,
+          scenes.get(StudioServlet.SCENES_LIMIT - i).getCreated().getTime());
+    }
+  }
+
+  private void preparePost() throws Exception {
+    // Initializing request mock
+    File file = new File("src/test/resources/api/1x1_pixel.jpg");
+    when(mockImagePart.getContentType()).thenReturn(CONTENT_TYPE);
+    when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(file));
+    when(mockCreatedPart.getInputStream()).thenReturn(
+        TestUtil.toInputStream(String.valueOf(CREATED.getTime())));
+    when(mockDirectorPart.getInputStream()).thenReturn(
+        TestUtil.toInputStream(String.valueOf(DIRECTOR_ID)));
+    when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(mockImagePart);
+    when(mockRequest.getPart(Scene.CREATED_PART)).thenReturn(mockCreatedPart);
+    when(mockRequest.getPart(Scene.DIRECTOR_ID_PART)).thenReturn(mockDirectorPart);
+    responseWriter = new StringWriter();
+    when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
+  }
+
+  private void prepareGet() throws Exception {
+    when(mockRequest.getParameter(StudioServlet.USER_PARAM)).thenReturn(Util.GSON.toJson(USER));
+    responseWriter = new StringWriter();
+    when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
   }
 }

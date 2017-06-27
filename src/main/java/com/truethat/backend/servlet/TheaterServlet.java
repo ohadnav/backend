@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Proudly created by ohad on 01/06/2017.
  *
- * @android <a>https://goo.gl/xsORJL</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/TheaterAPI.java</a>
  */
 @WebServlet(value = "/theater", name = "Theater")
 public class TheaterServlet extends HttpServlet {

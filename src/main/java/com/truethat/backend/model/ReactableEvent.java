@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 /**
  * Proudly created by ohad on 11/06/2017.
  *
- * @android <a>https://goo.gl/Itf035</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/ReactableEvent.java</a>
  */
 public class ReactableEvent {
   /**

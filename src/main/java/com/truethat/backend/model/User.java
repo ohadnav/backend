@@ -8,16 +8,14 @@ import javax.annotation.Nullable;
 /**
  * Proudly created by ohad on 12/06/2017.
  *
- * @android https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/auth/User.java
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/User.java</a>
  */
-public class User {
+@SuppressWarnings("unused") public class User {
   /**
    * Datastore kind.
    */
   public static final String DATASTORE_KIND = "User";
-  /**
-   * Datastore column names.
-   */
+  // ----------------- Datastore column names -------------------------
   public static final String DATASTORE_JOINED = "joined";
 
   public static final String DATASTORE_PHONE_NUMBER = "phoneNumber";
@@ -45,6 +43,10 @@ public class User {
     this.deviceId = deviceId;
     this.firstName = firstName;
     this.lastName = lastName;
+  }
+
+  @VisibleForTesting public User(Long id) {
+    this.id = id;
   }
 
   public Entity toEntity() {

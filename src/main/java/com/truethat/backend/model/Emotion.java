@@ -3,9 +3,9 @@ package com.truethat.backend.model;
 /**
  * Proudly created by ohad on 11/06/2017.
  *
- * @android <a>https://goo.gl/Qjv4gr</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Emotion.java</a>
  */
-public enum Emotion {
+@SuppressWarnings("unused") public enum Emotion {
   HAPPY(1),
   SAD(2);
 

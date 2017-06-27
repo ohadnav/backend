@@ -3,19 +3,24 @@ package com.truethat.backend.servlet;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.FetchOptions;
+import com.google.appengine.api.datastore.Query;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Scene;
+import com.truethat.backend.model.User;
 import com.truethat.backend.storage.StorageUtil;
 import com.truethat.backend.storage.UrlSigner;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -28,14 +33,17 @@ import javax.servlet.http.Part;
 /**
  * Proudly created by ohad on 07/05/2017.
  *
- * @android <a>https://goo.gl/1R2ySJ</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioAPI.java</a>
  */
 
 @WebServlet(value = "/studio", name = "Studio")
 @MultipartConfig
 public class StudioServlet extends HttpServlet {
+  @VisibleForTesting static final String USER_PARAM = "user";
   @VisibleForTesting
   static final String CREDENTIALS_PATH = "credentials/";
+  @VisibleForTesting
+  static final int SCENES_LIMIT = 10;
   private static final Logger LOG = Logger.getLogger(StudioServlet.class.getName());
   private static final DatastoreService DATASTORE_SERVICE =
       DatastoreServiceFactory.getDatastoreService();
@@ -84,6 +92,24 @@ public class StudioServlet extends HttpServlet {
       LOG.severe("Oh oh... " + e.getMessage());
       resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
+  }
+
+  /**
+   * Getting the user's repertoire, i.e. the {@link Scene}s he had created.
+   *
+   * @param req with the user ID
+   */
+  @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+      throws ServletException, IOException {
+    User user = Util.GSON.fromJson(req.getParameter(USER_PARAM), User.class);
+    Query query = new Query(Scene.DATASTORE_KIND).setFilter(
+        new Query.FilterPredicate(Scene.DATASTORE_DIRECTOR_ID, Query.FilterOperator.EQUAL,
+            user.getId())).addSort(Scene.DATASTORE_CREATED,
+        Query.SortDirection.DESCENDING);
+    List<Entity> result =
+        DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(SCENES_LIMIT));
+    List<Scene> scenes = result.stream().map(Scene::new).collect(Collectors.toList());
+    resp.getWriter().print(Util.GSON.toJson(scenes));
   }
 
   /**

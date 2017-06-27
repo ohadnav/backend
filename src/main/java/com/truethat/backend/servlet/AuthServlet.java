@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Proudly created by ohad on 12/06/2017.
  *
- * @android https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/auth/AuthAPI.java
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/AuthAPI.java</a>
  */
 
 @WebServlet(value = "/auth", name = "Auth")
