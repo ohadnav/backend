@@ -57,6 +57,7 @@ public class AuthServletTest {
     responseWriter = new StringWriter();
     when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
   }
+
   /**
    * Stops the local Datastore emulator.
    */

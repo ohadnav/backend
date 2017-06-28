@@ -1,8 +1,6 @@
 package com.truethat.backend.storage;
 
-import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.StorageRequest;
-import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.Objects;
 import com.google.api.services.storage.model.StorageObject;
 import java.io.IOException;
@@ -14,22 +12,18 @@ import static org.junit.Assert.assertTrue;
 /**
  * Proudly created by ohad on 14/05/2017.
  */
-public class StorageBaseTest {
+public class BaseStorageTestSuite {
   protected final String bucketName = "test-bucket-" + System.currentTimeMillis();
-  protected Storage client;
+  protected DefaultStorageClient storageClient;
 
   /**
-   * Sets up the Storage client and creates a dummy bucket.
+   * Sets up the Storage storageClient and creates a dummy bucket.
    */
   @Before
   public void setUp() throws Exception {
-    client = StorageFactory.getService();
-    Bucket bucket = new Bucket();
-    bucket.setName(bucketName);
+    storageClient = new DefaultStorageClient();
     // Creates dummy bucket.
-    client.buckets().insert(System.getenv("GOOGLE_CLOUD_PROJECT"), bucket).execute();
-    // Fetching the bucket to ensure its existence.
-    client.buckets().get(bucketName).execute();
+    storageClient.addBucket(bucketName);
   }
 
   /**
@@ -37,22 +31,22 @@ public class StorageBaseTest {
    */
   @After
   public void tearDown() throws Exception {
-    Objects remainingObjects = client.objects().list(bucketName).execute();
+    Objects remainingObjects = storageClient.getClient().objects().list(bucketName).execute();
     if (remainingObjects.containsKey("items")) {
       for (StorageObject object : remainingObjects.getItems()) {
-        client.objects().delete(bucketName, object.getName()).execute();
+        storageClient.getClient().objects().delete(bucketName, object.getName()).execute();
       }
     }
     // Deletes dummy bucket.
-    client.buckets().delete(bucketName).execute();
-    assertTrue(isDeleted(client.buckets().get(bucketName)));
+    storageClient.getClient().buckets().delete(bucketName).execute();
+    assertTrue(isDeleted(storageClient.getClient().buckets().get(bucketName)));
   }
 
   /**
    * @param getRequest on the storage object.
    * @return whether the storage object exists. i.e. whether the requests could be completed.
    */
-  private boolean isDeleted(StorageRequest getRequest) {
+  protected boolean isDeleted(StorageRequest getRequest) {
     try {
       getRequest.execute();
       return false;

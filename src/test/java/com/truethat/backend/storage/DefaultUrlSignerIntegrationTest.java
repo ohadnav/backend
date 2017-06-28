@@ -21,10 +21,10 @@ import static org.junit.Assert.assertEquals;
 /**
  * Proudly created by ohad on 30/05/2017.
  */
-public class UrlSignerTest extends StorageBaseTest {
+public class DefaultUrlSignerIntegrationTest extends BaseStorageTestSuite {
   private static final String FILENAME = "richard.branson";
   private static final String CONTENT_TYPE = "text/plain";
-
+  private static final DefaultUrlSigner URL_SIGNER = new DefaultUrlSigner();
   private static String privateKey;
 
   @BeforeClass
@@ -38,7 +38,7 @@ public class UrlSignerTest extends StorageBaseTest {
   }
 
   @Test
-  public void getSignedUrl() throws Exception {
+  public void sign() throws Exception {
     final String quote = "screw it let\'s do it";
     // Create a temp file to upload
     File tempFile = File.createTempFile(FILENAME.split("\\.")[0], FILENAME.split("\\.")[1]);
@@ -50,19 +50,21 @@ public class UrlSignerTest extends StorageBaseTest {
     writer.close();
     tempFile.deleteOnExit();
     // Uploads the file
-    final StorageObject uploaded = StorageUtil.uploadStream(
+    final String uploaded = storageClient.save(
         FILENAME, CONTENT_TYPE, new FileInputStream(tempFile), bucketName);
     // Asserts that file exists
-    final StorageObject found = client.objects().get(bucketName, uploaded.getName()).execute();
+    final StorageObject found =
+        storageClient.getClient().objects().get(bucketName, uploaded).execute();
     assertEquals(found.getName(), FILENAME);
     // Asserts the file cannot be accessed.
-    URL url = new URL(UrlSigner.BASE_GOOGLE_CLOUD_STORAGE_URL + "/" + bucketName + "/" + FILENAME);
+    URL url =
+        new URL(DefaultUrlSigner.BASE_GOOGLE_CLOUD_STORAGE_URL + "/" + bucketName + "/" + FILENAME);
     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
     connection.connect();
     assertEquals(HttpURLConnection.HTTP_FORBIDDEN, connection.getResponseCode());
     connection.disconnect();
     // Sign the URL (omit base google cloud path).
-    URL signedUrl = new URL(UrlSigner.getSignedUrl(privateKey, bucketName + "/" + FILENAME));
+    URL signedUrl = new URL(URL_SIGNER.sign(privateKey, bucketName + "/" + FILENAME));
     // Asserts the file can now be accessed.
     connection = (HttpURLConnection) signedUrl.openConnection();
     connection.connect();

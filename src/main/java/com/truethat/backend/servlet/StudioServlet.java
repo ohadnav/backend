@@ -10,14 +10,17 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
-import com.truethat.backend.storage.StorageUtil;
+import com.truethat.backend.storage.DefaultStorageClient;
+import com.truethat.backend.storage.DefaultUrlSigner;
+import com.truethat.backend.storage.StorageClient;
 import com.truethat.backend.storage.UrlSigner;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -39,20 +42,50 @@ import javax.servlet.http.Part;
 @WebServlet(value = "/studio", name = "Studio")
 @MultipartConfig
 public class StudioServlet extends HttpServlet {
-  @VisibleForTesting static final String USER_PARAM = "user";
   @VisibleForTesting
   static final String CREDENTIALS_PATH = "credentials/";
+  @VisibleForTesting static final String USER_PARAM = "user";
   @VisibleForTesting
-  static final int SCENES_LIMIT = 10;
+  static final int GET_LIMIT = 10;
   private static final Logger LOG = Logger.getLogger(StudioServlet.class.getName());
   private static final DatastoreService DATASTORE_SERVICE =
       DatastoreServiceFactory.getDatastoreService();
-  private static String bucketName = System.getenv("STUDIO_BUCKET");
+  private StorageClient storageClient;
+  private UrlSigner urlSigner = new DefaultUrlSigner();
+  private String bucketName = System.getenv("STUDIO_BUCKET");
   private String privateKey;
 
+  public String getBucketName() {
+    return bucketName;
+  }
+
   @VisibleForTesting
-  static void setBucketName(String bucketName) {
-    StudioServlet.bucketName = bucketName;
+  void setBucketName(String bucketName) {
+    this.bucketName = bucketName;
+  }
+
+  public String getPrivateKey() {
+    return privateKey;
+  }
+
+  public DatastoreService getDatastoreService() {
+    return DATASTORE_SERVICE;
+  }
+
+  public StorageClient getStorageClient() {
+    return storageClient;
+  }
+
+  @VisibleForTesting void setStorageClient(StorageClient storageClient) {
+    this.storageClient = storageClient;
+  }
+
+  public UrlSigner getUrlSigner() {
+    return urlSigner;
+  }
+
+  void setUrlSigner(UrlSigner urlSigner) {
+    this.urlSigner = urlSigner;
   }
 
   @Override
@@ -73,6 +106,33 @@ public class StudioServlet extends HttpServlet {
       e.printStackTrace();
       throw new ServletException("Could not get private key: " + e.getMessage());
     }
+    // Initializes storage client
+    try {
+      storageClient = new DefaultStorageClient();
+    } catch (IOException | GeneralSecurityException e) {
+      e.printStackTrace();
+      LOG.severe("Could not initialize storage client: " + e.getMessage());
+      throw new ServletException("Could not initialize storage client: " + e.getMessage());
+    }
+  }
+
+  /**
+   * Getting the user's repertoire, i.e. the {@link Reactable}s he had created.
+   *
+   * @param req with the user ID
+   */
+  @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+      throws ServletException, IOException {
+    User user = Util.GSON.fromJson(req.getParameter(USER_PARAM), User.class);
+    Query query = new Query(Reactable.DATASTORE_KIND).setFilter(
+        new Query.FilterPredicate(Reactable.DATASTORE_DIRECTOR_ID, Query.FilterOperator.EQUAL,
+            user.getId())).addSort(Reactable.DATASTORE_CREATED,
+        Query.SortDirection.DESCENDING);
+    List<Entity> result =
+        DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(GET_LIMIT));
+    List<Reactable> reactables =
+        result.stream().map(Reactable::fromEntity).collect(Collectors.toList());
+    resp.getWriter().print(Util.GSON.toJson(reactables));
   }
 
   /**
@@ -86,64 +146,16 @@ public class StudioServlet extends HttpServlet {
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     try {
-      Scene saved = saveScene(req);
-      resp.getWriter().print(Util.GSON.toJson(saved));
+      Part reactablePart = req.getPart(Reactable.REACTABLE_PART);
+      if (reactablePart == null) throw new IOException("Missing reactable, how dare you?");
+      Reactable toSave =
+          Util.GSON.fromJson(new InputStreamReader(reactablePart.getInputStream()),
+              Reactable.class);
+      toSave.save(req, this);
     } catch (Exception e) {
+      e.printStackTrace();
       LOG.severe("Oh oh... " + e.getMessage());
       resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
-  }
-
-  /**
-   * Getting the user's repertoire, i.e. the {@link Scene}s he had created.
-   *
-   * @param req with the user ID
-   */
-  @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
-    User user = Util.GSON.fromJson(req.getParameter(USER_PARAM), User.class);
-    Query query = new Query(Scene.DATASTORE_KIND).setFilter(
-        new Query.FilterPredicate(Scene.DATASTORE_DIRECTOR_ID, Query.FilterOperator.EQUAL,
-            user.getId())).addSort(Scene.DATASTORE_CREATED,
-        Query.SortDirection.DESCENDING);
-    List<Entity> result =
-        DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(SCENES_LIMIT));
-    List<Scene> scenes = result.stream().map(Scene::new).collect(Collectors.toList());
-    resp.getWriter().print(Util.GSON.toJson(scenes));
-  }
-
-  /**
-   * Saves the scene to Datastore, and its image to Storage.
-   *
-   * @param req with the scene data to save.
-   */
-  private Scene saveScene(HttpServletRequest req)
-      throws IOException, ServletException, GeneralSecurityException {
-    Part imagePart = req.getPart(Scene.IMAGE_PART);
-    Part directorPart = req.getPart(Scene.DIRECTOR_ID_PART);
-    Part createdPart = req.getPart(Scene.CREATED_PART);
-    if (imagePart == null) throw new IOException("Missing scene image.");
-    if (directorPart == null) throw new IOException("Missing scene director ID.");
-    if (createdPart == null) throw new IOException("Missing scene created timestamp.");
-    Scene scene = new Scene(Long.parseLong(Util.inputStreamToString(directorPart.getInputStream())),
-        new Date(Long.parseLong(Util.inputStreamToString(createdPart.getInputStream()))));
-    // Saves the image to storage.
-    // TODO(ohad): couple storage upload success with datastore saving success.
-    StorageUtil.uploadStream(scene.getImagePath(),
-        imagePart.getContentType(),
-        imagePart.getInputStream(),
-        bucketName);
-    scene.setImageSignedUrl(
-        UrlSigner.getSignedUrl(privateKey, bucketName + "/" + scene.getImagePath()));
-    // Saves the scene to Datastore.
-    Entity entity = new Entity(Scene.DATASTORE_KIND);
-    entity.setProperty(Scene.DATASTORE_CREATED, scene.getCreated());
-    entity.setProperty(Scene.DATASTORE_DIRECTOR_ID, scene.getDirectorId());
-    entity.setProperty(Scene.DATASTORE_IMAGE_SIGNED_URL, scene.getImageSignedUrl());
-    DATASTORE_SERVICE.put(entity);
-    // Updates the scene with the generated key.
-    scene.setId(entity.getKey().getId());
-
-    return scene;
   }
 }

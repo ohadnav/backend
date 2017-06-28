@@ -88,7 +88,7 @@ public class AuthServlet extends HttpServlet {
    * Updates {@code existing} with fresh data from {@code fromClient}. More technically, looks for
    * non-null fields in {@code fromClient} that have different values than {@code existing}.
    *
-   * @param existing {@link User} entity that is found in datastore
+   * @param existing   {@link User} entity that is found in datastore
    * @param fromClient {@link User} entity that was provided by the client for authentication.
    * @return whether changes were applied
    */

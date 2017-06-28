@@ -20,7 +20,7 @@ public class ReactableEvent {
    */
   public static final String DATASTORE_TIMESTAMP = "timestamp";
   public static final String DATASTORE_USER_ID = "userId";
-  public static final String DATASTORE_SCENE_ID = "sceneId";
+  public static final String DATASTORE_REACTABLE_ID = "reactableId";
   public static final String DATASTORE_EVENT_TYPE = "eventType";
   public static final String DATASTORE_REACTION = "reaction";
 
@@ -52,23 +52,24 @@ public class ReactableEvent {
   private EventType eventType;
 
   /**
-   * Of the {@link Scene} that was interacted with.
+   * Of the {@link Reactable} that was interacted with.
    */
-  private long sceneId;
+  private long reactableId;
 
   @VisibleForTesting
-  public ReactableEvent(long userId, long sceneId, Date timestamp, EventType eventType, @Nullable
+  public ReactableEvent(long userId, long reactableId, Date timestamp, EventType eventType,
+      @Nullable
       Emotion reaction) {
     this.timestamp = timestamp;
     this.userId = userId;
     this.reaction = reaction;
     this.eventType = eventType;
-    this.sceneId = sceneId;
+    this.reactableId = reactableId;
   }
 
   public Entity toEntity() {
     Entity entity = new Entity(ReactableEvent.DATASTORE_KIND);
-    entity.setProperty(ReactableEvent.DATASTORE_SCENE_ID, sceneId);
+    entity.setProperty(ReactableEvent.DATASTORE_REACTABLE_ID, reactableId);
     entity.setProperty(ReactableEvent.DATASTORE_TIMESTAMP, timestamp);
     if (eventType != null) {
       entity.setProperty(ReactableEvent.DATASTORE_EVENT_TYPE, eventType.getCode());
@@ -96,7 +97,7 @@ public class ReactableEvent {
     return eventType;
   }
 
-  public long getSceneId() {
-    return sceneId;
+  public long getReactableId() {
+    return reactableId;
   }
 }

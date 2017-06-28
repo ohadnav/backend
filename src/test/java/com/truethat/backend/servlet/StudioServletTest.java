@@ -1,183 +1,92 @@
 package com.truethat.backend.servlet;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
-import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
-import com.google.common.base.Strings;
+import com.google.appengine.api.datastore.Query;
 import com.google.gson.reflect.TypeToken;
-import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
-import com.truethat.backend.storage.StorageBaseTest;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.when;
 
 /**
  * Proudly created by ohad on 10/05/2017.
  */
-public class StudioServletTest extends StorageBaseTest {
-  private static final LocalServiceTestHelper HELPER =
-      new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
+public class StudioServletTest extends BaseServletTestSuite {
   private static final long DIRECTOR_ID = 123L;
   private static final User USER = new User(DIRECTOR_ID);
   private static final Date CREATED = new Date();
-  private static final String CONTENT_TYPE = "image/jpeg";
-  @Mock
-  private ServletConfig mockServletConfig;
-  @Mock
-  private ServletContext mockServletContext;
-  @Mock
-  private HttpServletRequest mockRequest;
-  @Mock
-  private HttpServletResponse mockResponse;
-  @Mock
-  private Part mockImagePart;
-  @Mock
-  private Part mockDirectorPart;
-  @Mock
-  private Part mockCreatedPart;
-  private StringWriter responseWriter;
-  private DatastoreService datastoreService;
-  private StudioServlet studioServlet;
-
-  /**
-   * Starts the local Datastore emulator.
-   */
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    MockitoAnnotations.initMocks(this);
-    HELPER.setUp();
-    datastoreService = DatastoreServiceFactory.getDatastoreService();
-    studioServlet = new StudioServlet();
-    // Setting mock server context.
-    when(mockServletContext.getResourceAsStream(
-        StudioServlet.CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json"))
-        .thenReturn(new FileInputStream(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")));
-    when(mockServletConfig.getServletContext()).thenReturn(mockServletContext);
-    studioServlet.init(mockServletConfig);
-    StudioServlet.setBucketName(bucketName);
-  }
-
-  /**
-   * Stops the local Datastore emulator.
-   */
-  @Override
-  public void tearDown() throws Exception {
-    super.tearDown();
-    HELPER.tearDown();
-  }
-
-  @Test
-  public void sceneSaved() throws Exception {
-    preparePost();
-    // Executes the POST request.
-    studioServlet.doPost(mockRequest, mockResponse);
-    // Reads responded scene ID.
-    String response = responseWriter.toString();
-    Scene scene = Util.GSON.fromJson(response, Scene.class);
-    assertEquals(DIRECTOR_ID, scene.getDirectorId());
-    assertEquals(CREATED, scene.getCreated());
-    // Asserts that the scene's image is saved. If it's not uploaded, then an exception should be thrown.
-    client.objects().get(bucketName, scene.getImagePath()).execute();
-    // Asserts that the scene was saved into the Datastore.
-    Entity savedEntity =
-        datastoreService.get(KeyFactory.createKey(Scene.DATASTORE_KIND, scene.getId()));
-    assertEquals(scene.getDirectorId(), savedEntity.getProperty(Scene.DATASTORE_DIRECTOR_ID));
-    assertEquals(scene.getCreated(), savedEntity.getProperty(Scene.DATASTORE_CREATED));
-    assertNotNull(savedEntity.getProperty(Scene.DATASTORE_IMAGE_SIGNED_URL));
-  }
+  private static final Reactable REACTABLE = new Scene(DIRECTOR_ID, CREATED, null);
 
   @Test
   public void sceneNotSaved_noImage() throws Exception {
-    preparePost();
+    prepareReactableSave(REACTABLE);
     when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(null);
-
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts there is no response.
-    assertTrue(Strings.isNullOrEmpty(responseWriter.toString()));
+    // No entity should have been saved.
+    Iterator<Entity> entities =
+        datastoreService.prepare(new Query(Reactable.DATASTORE_KIND)).asIterator();
+    assertFalse(entities.hasNext());
   }
 
   @Test
-  public void sceneNotSaved_noDirectorId() throws Exception {
-    preparePost();
-    when(mockRequest.getPart(Scene.DIRECTOR_ID_PART)).thenReturn(null);
+  public void reactableNotSaved_noReactable() throws Exception {
+    prepareReactableSave(REACTABLE);
+    when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(null);
 
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts there is no response.
-    assertTrue(Strings.isNullOrEmpty(responseWriter.toString()));
+    // No entity should have been saved.
+    Iterator<Entity> entities =
+        datastoreService.prepare(new Query(Reactable.DATASTORE_KIND)).asIterator();
+    assertFalse(entities.hasNext());
   }
 
   @Test
-  public void sceneNotSaved_noCreated() throws Exception {
-    preparePost();
-    when(mockRequest.getPart(Scene.CREATED_PART)).thenReturn(null);
-
-    // Executes the POST request.
-    studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts there is no response.
-    assertTrue(Strings.isNullOrEmpty(responseWriter.toString()));
+  public void doGet() throws Exception {
+    // Add a scene to datastore.
+    saveScene((new Scene(DIRECTOR_ID, CREATED, null)));
+    Scene scene = (Scene) Reactable.fromEntity(
+        datastoreService.prepare(new Query(Reactable.DATASTORE_KIND)).asSingleEntity());
+    // Sends the GET request
+    prepareGet();
+    studioServlet.doGet(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertEquals(1, respondedReactables.size());
+    assertEquals(scene, respondedReactables.get(0));
   }
 
   @Test public void getRepertoire() throws Exception {
     // Save reactables
-    for (int i = 0; i < StudioServlet.SCENES_LIMIT + 1; i++) {
-      Entity entity = new Entity(Scene.DATASTORE_KIND);
-      entity.setProperty(Scene.DATASTORE_CREATED, new Date(CREATED.getTime() + i));
-      entity.setProperty(Scene.DATASTORE_DIRECTOR_ID, DIRECTOR_ID);
-      datastoreService.put(entity);
+    for (int i = 0; i < StudioServlet.GET_LIMIT + 1; i++) {
+      saveScene(new Scene(DIRECTOR_ID, new Date(CREATED.getTime() + i), null));
     }
     prepareGet();
     studioServlet.doGet(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Scene> scenes = Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
     }.getType());
-    // Asserts no more than StudioServlet.SCENES_LIMIT are responded.
-    assertEquals(StudioServlet.SCENES_LIMIT, scenes.size());
-    // Asserts the scenes are sorted by recency.
-    for (int i = StudioServlet.SCENES_LIMIT; i > 0; i--) {
+    // Asserts no more than StudioServlet.GET_LIMIT are responded.
+    assertEquals(StudioServlet.GET_LIMIT, respondedReactables.size());
+    // Asserts the reactables are sorted by recency.
+    for (int i = StudioServlet.GET_LIMIT; i > 0; i--) {
       assertEquals(CREATED.getTime() + i,
-          scenes.get(StudioServlet.SCENES_LIMIT - i).getCreated().getTime());
+          respondedReactables.get(StudioServlet.GET_LIMIT - i).getCreated().getTime());
     }
-  }
-
-  private void preparePost() throws Exception {
-    // Initializing request mock
-    File file = new File("src/test/resources/api/1x1_pixel.jpg");
-    when(mockImagePart.getContentType()).thenReturn(CONTENT_TYPE);
-    when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(file));
-    when(mockCreatedPart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(String.valueOf(CREATED.getTime())));
-    when(mockDirectorPart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(String.valueOf(DIRECTOR_ID)));
-    when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(mockImagePart);
-    when(mockRequest.getPart(Scene.CREATED_PART)).thenReturn(mockCreatedPart);
-    when(mockRequest.getPart(Scene.DIRECTOR_ID_PART)).thenReturn(mockDirectorPart);
-    responseWriter = new StringWriter();
-    when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
   }
 
   private void prepareGet() throws Exception {

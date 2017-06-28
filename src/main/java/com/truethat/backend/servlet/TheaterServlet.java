@@ -7,8 +7,8 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
 import com.google.common.annotations.VisibleForTesting;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.ReactableEvent;
-import com.truethat.backend.model.Scene;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,7 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet(value = "/theater", name = "Theater")
 public class TheaterServlet extends HttpServlet {
   @VisibleForTesting
-  static final int SCENES_LIMIT = 10;
+  static final int GET_LIMIT = 10;
   private static final DatastoreService DATASTORE_SERVICE =
       DatastoreServiceFactory.getDatastoreService();
 
@@ -36,12 +36,13 @@ public class TheaterServlet extends HttpServlet {
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
-    Query query = new Query(Scene.DATASTORE_KIND).addSort(Scene.DATASTORE_CREATED,
+    Query query = new Query(Reactable.DATASTORE_KIND).addSort(Reactable.DATASTORE_CREATED,
         Query.SortDirection.DESCENDING);
     List<Entity> result =
-        DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(SCENES_LIMIT));
-    List<Scene> scenes = result.stream().map(Scene::new).collect(Collectors.toList());
-    resp.getWriter().print(Util.GSON.toJson(scenes));
+        DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(GET_LIMIT));
+    List<Reactable> reactables =
+        result.stream().map(Reactable::fromEntity).collect(Collectors.toList());
+    resp.getWriter().print(Util.GSON.toJson(reactables));
   }
 
   /**

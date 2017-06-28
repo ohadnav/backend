@@ -1,33 +1,27 @@
 package com.truethat.backend.model;
 
 import com.google.appengine.api.datastore.Entity;
-import com.truethat.backend.common.Util;
+import com.truethat.backend.servlet.StudioServlet;
+import java.io.IOException;
 import java.util.Date;
-import java.util.Objects;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.Part;
 
 /**
  * Proudly created by ohad on 08/05/2017.
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Scene.java</a>
  */
-public class Scene {
+public class Scene extends Reactable {
   /**
    * Multipart HTTP request part names, as used by {@link com.truethat.backend.servlet.StudioServlet}.
    *
    * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioAPI.java</a>
    */
   public static final String IMAGE_PART = "image";
-  public static final String DIRECTOR_ID_PART = "director_id";
-  public static final String CREATED_PART = "created";
-  /**
-   * Datastore kind.
-   */
-  public static final String DATASTORE_KIND = "Scene";
   /**
    * Datastore column names.
    */
-  public static final String DATASTORE_CREATED = "created";
-  public static final String DATASTORE_DIRECTOR_ID = "directorId";
   public static final String DATASTORE_IMAGE_SIGNED_URL = "imageSignedUrl";
   /**
    * Sub path for scene images within the storage bucket.
@@ -37,82 +31,62 @@ public class Scene {
   private static final String DEFAULT_IMAGE_TYPE = "jpg";
 
   /**
-   * Scene ID, as defined by its datastore key.
-   */
-  private long id;
-  /**
-   * ID of the Scene director (i.e. its creator).
-   */
-  private long directorId;
-
-  /**
-   * Client created UTC timestamp
-   */
-  private Date created;
-
-  /**
    * Authenticated query string for the scene image, which is stored in Google Storage.
    */
   private String imageSignedUrl;
 
-  public Scene(Entity entity) {
-    id = entity.getKey().getId();
-    directorId = (Long) entity.getProperty(Scene.DATASTORE_DIRECTOR_ID);
-    created = (Date) entity.getProperty(Scene.DATASTORE_CREATED);
-    imageSignedUrl = (String) entity.getProperty(Scene.DATASTORE_IMAGE_SIGNED_URL);
+  Scene(Entity entity) {
+    super(entity);
+    imageSignedUrl = (String) entity.getProperty(DATASTORE_IMAGE_SIGNED_URL);
   }
 
-  public Scene(Long directorId, Date created) {
-    this.directorId = directorId;
-    this.created = created;
+  public Scene(Long directorId, Date created, String imageSignedUrl) {
+    super(directorId, created);
+    this.imageSignedUrl = imageSignedUrl;
   }
 
-  public long getId() {
-    return id;
+  @Override public Entity toEntity() {
+    Entity entity = super.toEntity();
+    entity.setProperty(DATASTORE_IMAGE_SIGNED_URL, imageSignedUrl);
+    return entity;
   }
 
-  public void setId(Long id) {
-    this.id = id;
+  @Override public void prepareSave(HttpServletRequest req,
+      StudioServlet servlet) throws Exception {
+    Part imagePart = req.getPart(IMAGE_PART);
+    if (imagePart == null) throw new IOException("Missing scene image, are you being shy?");
+    servlet.getStorageClient().save(getImagePath(),
+        imagePart.getContentType(),
+        imagePart.getInputStream(),
+        servlet.getBucketName());
+    imageSignedUrl = servlet.getUrlSigner()
+        .sign(servlet.getPrivateKey(), servlet.getBucketName() + "/" + getImagePath());
   }
 
-  public long getDirectorId() {
-    return directorId;
-  }
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Scene)) return false;
+    if (!super.equals(o)) return false;
 
-  public Date getCreated() {
-    return created;
+    Scene scene = (Scene) o;
+
+    return imageSignedUrl != null ? imageSignedUrl.equals(scene.imageSignedUrl)
+        : scene.imageSignedUrl == null;
   }
 
   public String getImageSignedUrl() {
     return imageSignedUrl;
   }
 
-  public void setImageSignedUrl(String imageSignedUrl) {
-    this.imageSignedUrl = imageSignedUrl;
-  }
-
   /**
    * @return the sub path of the image destination within the storage bucket.
    */
   public String getImagePath() {
-    return STORAGE_IMAGES_PATH + directorId + "/" + created.getTime() + "." + DEFAULT_IMAGE_TYPE;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj == null) {
-      return false;
-    }
-    if (!Scene.class.isAssignableFrom(obj.getClass())) {
-      return false;
-    }
-    final Scene other = (Scene) obj;
-    return id == other.id && directorId == other.directorId &&
-        Objects.equals(imageSignedUrl, other.imageSignedUrl) && created.equals(other.created);
-  }
-
-  @Override
-  public String toString() {
-    return Util.GSON.toJson(this);
+    return STORAGE_IMAGES_PATH
+        + getDirectorId()
+        + "/"
+        + getCreated().getTime()
+        + "."
+        + DEFAULT_IMAGE_TYPE;
   }
 }
