@@ -4,6 +4,7 @@ import com.google.api.services.storage.model.StorageObject;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,7 +13,6 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -57,20 +57,11 @@ public class DefaultUrlSignerIntegrationTest extends BaseStorageTestSuite {
         storageClient.getClient().objects().get(bucketName, uploaded).execute();
     assertEquals(found.getName(), FILENAME);
     // Asserts the file cannot be accessed.
-    URL url =
-        new URL(DefaultUrlSigner.BASE_GOOGLE_CLOUD_STORAGE_URL + "/" + bucketName + "/" + FILENAME);
-    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-    connection.connect();
-    assertEquals(HttpURLConnection.HTTP_FORBIDDEN, connection.getResponseCode());
-    connection.disconnect();
-    // Sign the URL (omit base google cloud path).
-    URL signedUrl = new URL(URL_SIGNER.sign(privateKey, bucketName + "/" + FILENAME));
-    // Asserts the file can now be accessed.
-    connection = (HttpURLConnection) signedUrl.openConnection();
-    connection.connect();
-    assertEquals(HttpURLConnection.HTTP_OK, connection.getResponseCode());
-    // Asserts the file content are as expected.
-    assertEquals(quote, Util.inputStreamToString(connection.getInputStream()));
-    connection.disconnect();
+    TestUtil.assertUrl(
+        DefaultUrlSigner.BASE_GOOGLE_CLOUD_STORAGE_URL + "/" + bucketName + "/" + FILENAME,
+        HttpURLConnection.HTTP_FORBIDDEN, null);
+    // Asserts the file can be accessed upon signing.
+    TestUtil.assertUrl(URL_SIGNER.sign(privateKey, bucketName + "/" + FILENAME),
+        HttpURLConnection.HTTP_OK, TestUtil.toInputStream(quote));
   }
 }

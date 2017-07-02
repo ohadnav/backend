@@ -22,6 +22,15 @@ public enum EventType {
     this.code = code;
   }
 
+  public static EventType fromCode(int code) {
+    for (EventType eventType : values()) {
+      if (eventType.getCode() == code) {
+        return eventType;
+      }
+    }
+    throw new IllegalArgumentException("Illegal " + EventType.class.getSimpleName() + " code.");
+  }
+
   public int getCode() {
     return code;
   }

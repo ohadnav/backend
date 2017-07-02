@@ -15,6 +15,15 @@ package com.truethat.backend.model;
     this.code = code;
   }
 
+  public static Emotion fromCode(int code) {
+    for (Emotion emotion : values()) {
+      if (emotion.getCode() == code) {
+        return emotion;
+      }
+    }
+    throw new IllegalArgumentException("Illegal " + Emotion.class.getSimpleName() + " code.");
+  }
+
   public int getCode() {
     return code;
   }

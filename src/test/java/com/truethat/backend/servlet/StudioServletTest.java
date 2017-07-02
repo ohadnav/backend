@@ -1,63 +1,62 @@
 package com.truethat.backend.servlet;
 
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Query;
 import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
+import javax.servlet.ServletException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 /**
  * Proudly created by ohad on 10/05/2017.
  */
 public class StudioServletTest extends BaseServletTestSuite {
-  private static final long DIRECTOR_ID = 123L;
-  private static final User USER = new User(DIRECTOR_ID);
-  private static final Date CREATED = new Date();
-  private static final Reactable REACTABLE = new Scene(DIRECTOR_ID, CREATED, null);
+  private User director;
+  private Scene scene;
 
-  @Test
+  @Override public void setUp() throws Exception {
+    super.setUp();
+    director = new User(PHONE_NUMBER + "-2", DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
+    saveUser(director);
+    saveUser(defaultUser);
+    scene = new Scene(director.getId(), NOW, null);
+  }
+
+  @Test(expected = ServletException.class)
   public void sceneNotSaved_noImage() throws Exception {
-    prepareReactableSave(REACTABLE);
+    prepareSceneSave(scene);
     when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(null);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // No entity should have been saved.
-    Iterator<Entity> entities =
-        datastoreService.prepare(new Query(Reactable.DATASTORE_KIND)).asIterator();
-    assertFalse(entities.hasNext());
   }
 
-  @Test
+  @Test(expected = ServletException.class)
   public void reactableNotSaved_noReactable() throws Exception {
-    prepareReactableSave(REACTABLE);
+    prepareSceneSave(scene);
     when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(null);
-
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // No entity should have been saved.
-    Iterator<Entity> entities =
-        datastoreService.prepare(new Query(Reactable.DATASTORE_KIND)).asIterator();
-    assertFalse(entities.hasNext());
+  }
+
+  @Test(expected = IOException.class)
+  public void doRepertoire_missingUser() throws Exception {
+    when(mockRequest.getParameter(StudioServlet.USER_PARAM)).thenReturn(null);
+    studioServlet.doGet(mockRequest, mockResponse);
   }
 
   @Test
-  public void doGet() throws Exception {
+  public void getRepertoire() throws Exception {
     // Add a scene to datastore.
-    saveScene((new Scene(DIRECTOR_ID, CREATED, null)));
-    Scene scene = (Scene) Reactable.fromEntity(
-        datastoreService.prepare(new Query(Reactable.DATASTORE_KIND)).asSingleEntity());
+    saveScene(scene);
     // Sends the GET request
     prepareGet();
     studioServlet.doGet(mockRequest, mockResponse);
@@ -66,13 +65,27 @@ public class StudioServletTest extends BaseServletTestSuite {
         Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
         }.getType());
     assertEquals(1, respondedReactables.size());
+    // Enriches scene.
+    ReactableEnricher.enrich(Collections.singletonList(scene), defaultUser);
     assertEquals(scene, respondedReactables.get(0));
   }
 
-  @Test public void getRepertoire() throws Exception {
+  @SuppressWarnings("Duplicates") @Test
+  public void getRepertoire_emptyRepertoire() throws Exception {
+    // Sends the GET request
+    prepareGet();
+    studioServlet.doGet(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertTrue(respondedReactables.isEmpty());
+  }
+
+  @Test public void getRepertoire_multipleReactables() throws Exception {
     // Save reactables
     for (int i = 0; i < StudioServlet.GET_LIMIT + 1; i++) {
-      saveScene(new Scene(DIRECTOR_ID, new Date(CREATED.getTime() + i), null));
+      saveScene(new Scene(director.getId(), new Date(NOW.getTime() + i), null));
     }
     prepareGet();
     studioServlet.doGet(mockRequest, mockResponse);
@@ -84,14 +97,13 @@ public class StudioServletTest extends BaseServletTestSuite {
     assertEquals(StudioServlet.GET_LIMIT, respondedReactables.size());
     // Asserts the reactables are sorted by recency.
     for (int i = StudioServlet.GET_LIMIT; i > 0; i--) {
-      assertEquals(CREATED.getTime() + i,
+      assertEquals(NOW.getTime() + i,
           respondedReactables.get(StudioServlet.GET_LIMIT - i).getCreated().getTime());
     }
   }
 
   private void prepareGet() throws Exception {
-    when(mockRequest.getParameter(StudioServlet.USER_PARAM)).thenReturn(Util.GSON.toJson(USER));
-    responseWriter = new StringWriter();
-    when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
+    when(mockRequest.getParameter(StudioServlet.USER_PARAM)).thenReturn(Util.GSON.toJson(director));
+    resetResponseMock();
   }
 }

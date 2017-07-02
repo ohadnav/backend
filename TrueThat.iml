@@ -11,6 +11,12 @@
         </sourceRoots>
       </configuration>
     </facet>
+    <facet type="app-engine-flexible" name="Google App Engine Flexible">
+      <configuration>
+        <option name="appYamlPath" value="$MODULE_DIR$/src/main/appengine/app.yaml" />
+        <option name="dockerDirectory" value="$MODULE_DIR$/src/main/docker" />
+      </configuration>
+    </facet>
   </component>
   <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
     <output url="file://$MODULE_DIR$/target/backend-1.0-SNAPSHOT/WEB-INF/classes" />

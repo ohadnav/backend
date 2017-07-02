@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
 import java.util.Date;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -26,7 +27,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static com.truethat.backend.common.TestUtil.assertEqualsForEntityAndReactable;
-import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.when;
 
 /**
@@ -85,9 +85,9 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
   @Test
   public void reactableSaved() throws Exception {
     // Initializing request mock
-    File file = new File("src/test/resources/api/1x1_pixel.jpg");
+    String fileName = "src/test/resources/api/1x1_pixel.jpg";
     when(mockImagePart.getContentType()).thenReturn(CONTENT_TYPE);
-    when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(file));
+    when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
     when(mockReactablePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(REACTABLE)));
     when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(mockImagePart);
@@ -100,9 +100,9 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     Entity savedEntity =
         datastoreService.prepare(new Query(Reactable.DATASTORE_KIND)).asSingleEntity();
     Scene scene = (Scene) Reactable.fromEntity(savedEntity);
-    // Asserts that the scene's image is saved. If it's not uploaded, then an exception should be thrown.
-    assertFalse(
-        isDeleted((storageClient.getClient().objects().get(bucketName, scene.getImagePath()))));
+    // Asserts that the scene's image is saved, and matches the uploaded one.
+    TestUtil.assertUrl(scene.getImageSignedUrl(), HttpURLConnection.HTTP_OK,
+        new FileInputStream(new File(fileName)));
     assertEqualsForEntityAndReactable(savedEntity, scene);
   }
 }

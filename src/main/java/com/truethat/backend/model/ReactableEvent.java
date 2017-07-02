@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/ReactableEvent.java</a>
  */
-public class ReactableEvent {
+@SuppressWarnings("FieldCanBeLocal") public class ReactableEvent {
   /**
    * Datastore kind.
    */
@@ -27,7 +27,7 @@ public class ReactableEvent {
   /**
    * ReactableEvent ID, as defined by its datastore key.
    */
-  @SuppressWarnings("unused") private long id;
+  @SuppressWarnings("unused") private Long id;
 
   /**
    * Client UTC timestamp
@@ -56,6 +56,24 @@ public class ReactableEvent {
    */
   private long reactableId;
 
+  public ReactableEvent(Entity entity) {
+    if (entity.getProperty(DATASTORE_USER_ID) != null) {
+      userId = (Long) entity.getProperty(DATASTORE_USER_ID);
+    }
+    if (entity.getProperty(DATASTORE_EVENT_TYPE) != null) {
+      eventType = EventType.fromCode(((Long) entity.getProperty(DATASTORE_EVENT_TYPE)).intValue());
+    }
+    if (entity.getProperty(DATASTORE_REACTION) != null) {
+      reaction = Emotion.fromCode(((Long) entity.getProperty(DATASTORE_REACTION)).intValue());
+    }
+    if (entity.getProperty(DATASTORE_REACTABLE_ID) != null) {
+      reactableId = (Long) entity.getProperty(DATASTORE_REACTABLE_ID);
+    }
+    if (entity.getProperty(DATASTORE_TIMESTAMP) != null) {
+      timestamp = (Date) entity.getProperty(DATASTORE_TIMESTAMP);
+    }
+    id = entity.getKey().getId();
+  }
   @VisibleForTesting
   public ReactableEvent(long userId, long reactableId, Date timestamp, EventType eventType,
       @Nullable
@@ -99,5 +117,13 @@ public class ReactableEvent {
 
   public long getReactableId() {
     return reactableId;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
   }
 }

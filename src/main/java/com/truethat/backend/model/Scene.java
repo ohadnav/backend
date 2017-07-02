@@ -1,6 +1,7 @@
 package com.truethat.backend.model;
 
 import com.google.appengine.api.datastore.Entity;
+import com.google.common.annotations.VisibleForTesting;
 import com.truethat.backend.servlet.StudioServlet;
 import java.io.IOException;
 import java.util.Date;
@@ -40,7 +41,7 @@ public class Scene extends Reactable {
     imageSignedUrl = (String) entity.getProperty(DATASTORE_IMAGE_SIGNED_URL);
   }
 
-  public Scene(Long directorId, Date created, String imageSignedUrl) {
+  @VisibleForTesting public Scene(Long directorId, Date created, String imageSignedUrl) {
     super(directorId, created);
     this.imageSignedUrl = imageSignedUrl;
   }
@@ -78,10 +79,14 @@ public class Scene extends Reactable {
     return imageSignedUrl;
   }
 
+  public void setImageSignedUrl(String imageSignedUrl) {
+    this.imageSignedUrl = imageSignedUrl;
+  }
+
   /**
    * @return the sub path of the image destination within the storage bucket.
    */
-  public String getImagePath() {
+  private String getImagePath() {
     return STORAGE_IMAGES_PATH
         + getDirectorId()
         + "/"

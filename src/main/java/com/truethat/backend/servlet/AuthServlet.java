@@ -33,25 +33,19 @@ public class AuthServlet extends HttpServlet {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     Entity userEntity = user.toEntity();
     // Entity whose key is ultimately responded.
-    Entity toRespondEntity = userEntity;
-    boolean shouldCreateNewUser = true;
-    Query similarUsersQuery = similarUsersQuery(userEntity);
-    if (similarUsersQuery != null) {
-      Iterator<Entity> existingUsers =
-          DATASTORE_SERVICE.prepare(similarUsersQuery).asIterable().iterator();
-      if (existingUsers.hasNext()) {
-        // If a similar user was found, then don't create a new one in datastore,
-        // and use its ID for the response.
-        toRespondEntity = existingUsers.next();
-        shouldCreateNewUser = false;
-      }
+    Entity toPut = userEntity;
+    Entity similarUserEntity = similarUser(userEntity);
+    boolean shouldCreateNewUser = false;
+    if (similarUserEntity != null) {
+      // If a similar user was found, then don't create a new one in datastore,
+      // and use its ID for the response.
+      toPut = similarUserEntity;
+      shouldCreateNewUser = true;
     }
-    if (shouldCreateNewUser || updateIfShould(toRespondEntity, userEntity)) {
-      DATASTORE_SERVICE.put(toRespondEntity);
+    if (shouldCreateNewUser || updateIfShould(toPut, userEntity)) {
+      DATASTORE_SERVICE.put(toPut);
     }
-    // Updates user ID, and responds it to client.
-    user.setId(toRespondEntity.getKey().getId());
-    resp.getWriter().print(Util.GSON.toJson(user));
+    resp.getWriter().print(Util.GSON.toJson(new User(toPut)));
   }
 
   /**
@@ -62,7 +56,8 @@ public class AuthServlet extends HttpServlet {
    * @return a query that looks for similar users. Null if no query filters could be derived from
    * {@code userEntity}.
    */
-  private @Nullable Query similarUsersQuery(Entity userEntity) {
+  private @Nullable Entity similarUser(Entity userEntity) {
+    Entity similarUserEntity = null;
     Query query = new Query(User.DATASTORE_KIND);
     List<Query.Filter> filters = new ArrayList<>();
     if (userEntity.hasProperty(User.DATASTORE_DEVICE_ID)) {
@@ -73,15 +68,14 @@ public class AuthServlet extends HttpServlet {
       filters.add(new Query.FilterPredicate(User.DATASTORE_PHONE_NUMBER, Query.FilterOperator.EQUAL,
           userEntity.getProperty(User.DATASTORE_PHONE_NUMBER)));
     }
-    if (filters.size() == 1) {
-      query.setFilter(filters.get(0));
-    } else if (filters.size() > 1) {
-      query.setFilter(Query.CompositeFilterOperator.or(filters));
-    } else {
-      // No filters could be created.
-      query = null;
+    Util.setFilter(query, filters, Query.CompositeFilterOperator.OR);
+    if (!filters.isEmpty()) {
+      Iterator<Entity> existingUsers = DATASTORE_SERVICE.prepare(query).asIterable().iterator();
+      if (existingUsers.hasNext()) {
+        similarUserEntity = existingUsers.next();
+      }
     }
-    return query;
+    return similarUserEntity;
   }
 
   /**

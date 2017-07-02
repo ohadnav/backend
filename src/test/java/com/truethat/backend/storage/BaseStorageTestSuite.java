@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class BaseStorageTestSuite {
   protected final String bucketName = "test-bucket-" + System.currentTimeMillis();
-  protected DefaultStorageClient storageClient;
+  DefaultStorageClient storageClient;
 
   /**
    * Sets up the Storage storageClient and creates a dummy bucket.
@@ -46,7 +46,7 @@ public class BaseStorageTestSuite {
    * @param getRequest on the storage object.
    * @return whether the storage object exists. i.e. whether the requests could be completed.
    */
-  protected boolean isDeleted(StorageRequest getRequest) {
+  private boolean isDeleted(StorageRequest getRequest) {
     try {
       getRequest.execute();
       return false;

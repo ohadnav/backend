@@ -3,6 +3,7 @@ package com.truethat.backend.model;
 import com.google.appengine.api.datastore.Entity;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Date;
+import java.util.Objects;
 import javax.annotation.Nullable;
 
 /**
@@ -37,15 +38,35 @@ import javax.annotation.Nullable;
    */
   @SuppressWarnings({"unused", "FieldCanBeLocal"}) private Long id;
 
+  public User(Entity entity) {
+    if (entity.getProperty(DATASTORE_FIRST_NAME) != null) {
+      firstName = (String) entity.getProperty(DATASTORE_FIRST_NAME);
+    }
+    if (entity.getProperty(DATASTORE_LAST_NAME) != null) {
+      lastName = (String) entity.getProperty(DATASTORE_LAST_NAME);
+    }
+    if (entity.getProperty(DATASTORE_PHONE_NUMBER) != null) {
+      phoneNumber = (String) entity.getProperty(DATASTORE_PHONE_NUMBER);
+    }
+    if (entity.getProperty(DATASTORE_DEVICE_ID) != null) {
+      deviceId = (String) entity.getProperty(DATASTORE_DEVICE_ID);
+    }
+    if (entity.getProperty(DATASTORE_JOINED) != null) {
+      joined = (Date) entity.getProperty(DATASTORE_JOINED);
+    }
+    id = entity.getKey().getId();
+  }
+
   @VisibleForTesting public User(@Nullable String phoneNumber, @Nullable String deviceId,
-      @Nullable String firstName, @Nullable String lastName) {
+      @Nullable String firstName, @Nullable String lastName, Date joined) {
     this.phoneNumber = phoneNumber;
     this.deviceId = deviceId;
     this.firstName = firstName;
     this.lastName = lastName;
+    this.joined = joined;
   }
 
-  @VisibleForTesting public User(Long id) {
+  @VisibleForTesting public User(long id) {
     this.id = id;
   }
 
@@ -68,7 +89,7 @@ import javax.annotation.Nullable;
     return entity;
   }
 
-  public Long getId() {
+  public long getId() {
     return id;
   }
 
@@ -84,11 +105,33 @@ import javax.annotation.Nullable;
     return deviceId;
   }
 
+  public Date getJoined() {
+    return joined;
+  }
+
   public String getFirstName() {
     return firstName;
   }
 
   public String getLastName() {
     return lastName;
+  }
+
+  @SuppressWarnings("SimplifiableIfStatement") @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof User)) return false;
+
+    User user = (User) o;
+
+    if (joined != null ? !joined.equals(user.joined) : user.joined != null) return false;
+    if (phoneNumber != null ? !phoneNumber.equals(user.phoneNumber) : user.phoneNumber != null) {
+      return false;
+    }
+    if (deviceId != null ? !deviceId.equals(user.deviceId) : user.deviceId != null) return false;
+    if (firstName != null ? !firstName.equals(user.firstName) : user.firstName != null) {
+      return false;
+    }
+    if (lastName != null ? !lastName.equals(user.lastName) : user.lastName != null) return false;
+    return Objects.equals(id, user.id);
   }
 }

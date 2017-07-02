@@ -1,9 +1,11 @@
 package com.truethat.backend.model;
 
 import com.google.appengine.api.datastore.Entity;
+import com.google.common.annotations.VisibleForTesting;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.servlet.StudioServlet;
 import java.util.Date;
+import java.util.Map;
 import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 
@@ -16,7 +18,7 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Reactable.java</a>
  */
-public abstract class Reactable {
+@SuppressWarnings({"unused", "FieldCanBeLocal"}) public abstract class Reactable {
   /**
    * Multipart HTTP request part names, as used by backend endpoints such as {@link
    * com.truethat.backend.servlet.StudioServlet}.
@@ -37,16 +39,37 @@ public abstract class Reactable {
   /**
    * Scene ID, as defined by its datastore key.
    */
-  private long id;
+  private Long id;
   /**
-   * ID of the Scene director (i.e. its creator).
+   * ID of the Reactable director (i.e. its creator).
    */
-  private long directorId;
+  private Long directorId;
 
   /**
    * Client created UTC timestamp
    */
   private Date created;
+
+  /**
+   * Whether the reactable was viewed by the user.
+   */
+  private boolean viewed;
+
+  /**
+   * Counters of emotional reactions to the reactable, per each emotion.
+   */
+  private Map<Emotion, Long> reactionCounters;
+
+  /**
+   * The user reaction to the reactable, {@code null} for no reaction.
+   */
+  private Emotion userReaction;
+
+  /**
+   * Reactable director (i.e. its creator). This field is what eventually will be returned to client
+   * endpoints.
+   */
+  private User director;
 
   public Reactable(Entity entity) {
     id = entity.getKey().getId();
@@ -54,7 +77,7 @@ public abstract class Reactable {
     created = (Date) entity.getProperty(DATASTORE_CREATED);
   }
 
-  public Reactable(Long directorId, Date created) {
+  @VisibleForTesting public Reactable(Long directorId, Date created) {
     this.directorId = directorId;
     this.created = created;
   }
@@ -79,12 +102,54 @@ public abstract class Reactable {
     return reactable;
   }
 
+  public boolean isViewed() {
+    return viewed;
+  }
+
+  public void setViewed(boolean viewed) {
+    this.viewed = viewed;
+  }
+
+  public Map<Emotion, Long> getReactionCounters() {
+    return reactionCounters;
+  }
+
+  public void setReactionCounters(
+      Map<Emotion, Long> reactionCounters) {
+    this.reactionCounters = reactionCounters;
+  }
+
+  public Emotion getUserReaction() {
+    return userReaction;
+  }
+
+  public void setUserReaction(Emotion userReaction) {
+    this.userReaction = userReaction;
+  }
+
+  public User getDirector() {
+    return director;
+  }
+
+  public void setDirector(User director) {
+    directorId = null;
+    this.director = director;
+  }
+
   public long getId() {
     return id;
   }
 
+  public void setId(Long id) {
+    this.id = id;
+  }
+
   public long getDirectorId() {
-    return directorId;
+    return director == null ? directorId : director.getId();
+  }
+
+  @VisibleForTesting public boolean hasDirectorId() {
+    return directorId != null;
   }
 
   public Date getCreated() {
@@ -122,8 +187,8 @@ public abstract class Reactable {
 
     Reactable reactable = (Reactable) o;
 
-    if (id != reactable.id) return false;
-    if (directorId != reactable.directorId) return false;
+    if (!Objects.equals(id, reactable.id)) return false;
+    if (!Objects.equals(directorId, reactable.directorId)) return false;
     return created != null ? created.equals(reactable.created) : reactable.created == null;
   }
 

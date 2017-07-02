@@ -123,6 +123,9 @@ public class StudioServlet extends HttpServlet {
    */
   @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
+    if (req.getParameter(USER_PARAM) == null) {
+      throw new IOException("Missing " + USER_PARAM + " parameter.");
+    }
     User user = Util.GSON.fromJson(req.getParameter(USER_PARAM), User.class);
     Query query = new Query(Reactable.DATASTORE_KIND).setFilter(
         new Query.FilterPredicate(Reactable.DATASTORE_DIRECTOR_ID, Query.FilterOperator.EQUAL,
@@ -132,13 +135,15 @@ public class StudioServlet extends HttpServlet {
         DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(GET_LIMIT));
     List<Reactable> reactables =
         result.stream().map(Reactable::fromEntity).collect(Collectors.toList());
+    ReactableEnricher.enrich(reactables, user);
     resp.getWriter().print(Util.GSON.toJson(reactables));
   }
 
   /**
-   * Saves the scene within the request to storage and datastore. The request is expected to be
-   * multipart HTTP request with three parts: 1) image 2) director ID as string 3) created timestamp
-   * as string. (i.e. '1234567890') <p> Part names are found in {@link Scene}.
+   * Saves the {@link Reactable} within the request to storage and datastore, and response the saved
+   * {@link Reactable} The request is expected to be multipart HTTP request with three parts: 1)
+   * image 2) director ID as string 3) created timestamp as string. (i.e. '1234567890') <p> Part
+   * names are found in {@link Scene}.
    *
    * @param req multipart request with the scene image and director ID.
    */
@@ -152,10 +157,12 @@ public class StudioServlet extends HttpServlet {
           Util.GSON.fromJson(new InputStreamReader(reactablePart.getInputStream()),
               Reactable.class);
       toSave.save(req, this);
+      resp.getWriter().print(Util.GSON.toJson(toSave));
     } catch (Exception e) {
       e.printStackTrace();
       LOG.severe("Oh oh... " + e.getMessage());
       resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+      throw new ServletException(e.getMessage());
     }
   }
 }

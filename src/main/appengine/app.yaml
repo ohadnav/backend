@@ -5,6 +5,7 @@ env_variables:
    GOOGLE_CLOUD_PROJECT: truethat-app
    APPLICATION_NAME: TrueThat Backend Production
 
+# Leveraging Jetty 9 & Servlet 3.1 @WebServlet annotation
 handlers:
 - url: /.*
   script: this field is required, but ignored
@@ -13,7 +14,6 @@ runtime_config:
   jdk: openjdk8
   server: jetty9
 
-# Leveraging Jetty 9 & Servlet 3.1 @WebServlet annotation
 beta_settings:
   java_quickstart: true
 
