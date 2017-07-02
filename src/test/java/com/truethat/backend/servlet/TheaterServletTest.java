@@ -50,6 +50,21 @@ public class TheaterServletTest extends BaseServletTestSuite {
     assertEquals(scene, respondedReactables.get(0));
   }
 
+  @Test
+  public void dontFetchOwnReactables() throws Exception {
+    prepareFetch();
+    saveScene(scene);
+    when(mockRequest.getReader()).thenReturn(toBufferedReader(Util.GSON.toJson(director)));
+    resetResponseMock();
+    // Sends the GET request
+    theaterServlet.doPost(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertTrue(respondedReactables.isEmpty());
+  }
+
   @Test(expected = Exception.class)
   public void fetchReactables_missingUser() throws Exception {
     saveScene(scene);
@@ -85,10 +100,11 @@ public class TheaterServletTest extends BaseServletTestSuite {
     }.getType());
     // Asserts no more than TheaterServlet.FETCH_LIMIT are responded.
     assertEquals(TheaterServlet.FETCH_LIMIT, reactables.size());
+    long recentTimestamp = reactables.get(0).getCreated().getTime();
     // Asserts the scenes are sorted by recency.
-    for (int i = TheaterServlet.FETCH_LIMIT; i > 0; i--) {
-      Scene scene = (Scene) reactables.get(TheaterServlet.FETCH_LIMIT - i);
-      assertEquals(new Date(NOW.getTime() + i), scene.getCreated());
+    for (int i = 0; i < TheaterServlet.FETCH_LIMIT; i++) {
+      Scene scene = (Scene) reactables.get(i);
+      assertEquals(new Date(recentTimestamp - i), scene.getCreated());
       // Should have image url
       assertNotNull(scene.getImageSignedUrl());
     }

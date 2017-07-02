@@ -10,6 +10,7 @@ import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.User;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.ServletException;
@@ -37,12 +38,14 @@ public class TheaterServlet extends HttpServlet {
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
-    Query query = new Query(Reactable.DATASTORE_KIND).addSort(Reactable.DATASTORE_CREATED,
-        Query.SortDirection.DESCENDING);
+    Query query = new Query(Reactable.DATASTORE_KIND).setFilter(
+        new Query.FilterPredicate(Reactable.DATASTORE_DIRECTOR_ID, Query.FilterOperator.NOT_EQUAL,
+            user.getId()));
     List<Entity> result =
         DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(FETCH_LIMIT));
     List<Reactable> reactables =
         result.stream().map(Reactable::fromEntity).collect(Collectors.toList());
+    reactables.sort(Comparator.comparing(Reactable::getCreated).reversed());
     ReactableEnricher.enrich(reactables, user);
     resp.getWriter().print(Util.GSON.toJson(reactables));
   }

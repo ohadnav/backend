@@ -19,7 +19,7 @@ public class Scene extends Reactable {
    *
    * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioAPI.java</a>
    */
-  public static final String IMAGE_PART = "image";
+  public static final String IMAGE_PART = "scene_image";
   /**
    * Datastore column names.
    */
