@@ -44,27 +44,22 @@ import javax.servlet.http.HttpServletRequest;
    * ID of the Reactable director (i.e. its creator).
    */
   private Long directorId;
-
   /**
    * Client created UTC timestamp
    */
   private Date created;
-
   /**
    * Whether the reactable was viewed by the user.
    */
   private boolean viewed;
-
   /**
    * Counters of emotional reactions to the reactable, per each emotion.
    */
   private Map<Emotion, Long> reactionCounters;
-
   /**
    * The user reaction to the reactable, {@code null} for no reaction.
    */
   private Emotion userReaction;
-
   /**
    * Reactable director (i.e. its creator). This field is what eventually will be returned to client
    * endpoints.
