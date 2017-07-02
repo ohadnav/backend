@@ -35,12 +35,12 @@ public class AuthServlet extends HttpServlet {
     // Entity whose key is ultimately responded.
     Entity toPut = userEntity;
     Entity similarUserEntity = similarUser(userEntity);
-    boolean shouldCreateNewUser = false;
+    boolean shouldCreateNewUser = true;
     if (similarUserEntity != null) {
       // If a similar user was found, then don't create a new one in datastore,
       // and use its ID for the response.
       toPut = similarUserEntity;
-      shouldCreateNewUser = true;
+      shouldCreateNewUser = false;
     }
     if (shouldCreateNewUser || updateIfShould(toPut, userEntity)) {
       DATASTORE_SERVICE.put(toPut);

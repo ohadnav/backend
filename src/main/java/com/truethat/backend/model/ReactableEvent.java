@@ -103,6 +103,10 @@ import javax.annotation.Nullable;
     return timestamp;
   }
 
+  public void setTimestamp(Date timestamp) {
+    this.timestamp = timestamp;
+  }
+
   public long getUserId() {
     return userId;
   }

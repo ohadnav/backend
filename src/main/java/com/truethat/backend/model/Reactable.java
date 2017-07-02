@@ -151,6 +151,10 @@ import javax.servlet.http.HttpServletRequest;
     return created;
   }
 
+  public void setCreated(Date created) {
+    this.created = created;
+  }
+
   public Entity toEntity() {
     Entity entity = new Entity(DATASTORE_KIND);
     entity.setProperty(DATASTORE_CREATED, created);

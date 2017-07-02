@@ -19,25 +19,27 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Proudly created by ohad on 01/06/2017.
+ * Proudly created by ohad on 03/07/2017.
  *
- * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/TheaterAPI.java</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/RepertoireAPI.java</a>
  */
-@WebServlet(value = "/theater", name = "Theater")
-public class TheaterServlet extends HttpServlet {
-  @VisibleForTesting
-  static final int FETCH_LIMIT = 10;
+@WebServlet(value = "/repertoire", name = "Repertoire")
+public class RepertoireServlet extends HttpServlet {
+  @VisibleForTesting static final int FETCH_LIMIT = 10;
   private static final DatastoreService DATASTORE_SERVICE =
       DatastoreServiceFactory.getDatastoreService();
 
   /**
-   * Retrieves {@link Reactable}s from the Datastore.
+   * Getting the user's repertoire, i.e. the {@link Reactable}s he had created.
+   *
+   * @param req with {@link User} in its body.
    */
-  @Override
-  protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+  @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
-    Query query = new Query(Reactable.DATASTORE_KIND).addSort(Reactable.DATASTORE_CREATED,
+    Query query = new Query(Reactable.DATASTORE_KIND).setFilter(
+        new Query.FilterPredicate(Reactable.DATASTORE_DIRECTOR_ID, Query.FilterOperator.EQUAL,
+            user.getId())).addSort(Reactable.DATASTORE_CREATED,
         Query.SortDirection.DESCENDING);
     List<Entity> result =
         DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(FETCH_LIMIT));

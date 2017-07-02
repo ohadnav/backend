@@ -13,11 +13,9 @@ import com.truethat.backend.model.User;
 import com.truethat.backend.storage.LocalStorageClient;
 import com.truethat.backend.storage.LocalUrlSigner;
 import com.truethat.backend.storage.StorageClient;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Date;
 import javax.servlet.ServletConfig;
@@ -30,6 +28,7 @@ import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static com.truethat.backend.common.TestUtil.toBufferedReader;
 import static org.mockito.Mockito.when;
 
 /**
@@ -47,7 +46,7 @@ public class BaseServletTestSuite {
   @Mock HttpServletResponse mockResponse;
   StringWriter responseWriter;
   StudioServlet studioServlet;
-  TheaterServlet theaterServlet;
+  private InteractionServlet interactionServlet;
   private AuthServlet authServlet;
   private LocalServiceTestHelper localServiceTestHelper =
       new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
@@ -64,7 +63,7 @@ public class BaseServletTestSuite {
     datastoreService = DatastoreServiceFactory.getDatastoreService();
     // Initialize Servlets
     resetResponseMock();
-    theaterServlet = new TheaterServlet();
+    interactionServlet = new InteractionServlet();
     authServlet = new AuthServlet();
     // Initialize Studio servlet
     when(mockServletContext.getResourceAsStream(
@@ -115,6 +114,7 @@ public class BaseServletTestSuite {
     // Updates the scene id.
     Scene respondedScene = Util.GSON.fromJson(responseWriter.toString(), Scene.class);
     scene.setId(respondedScene.getId());
+    scene.setCreated(respondedScene.getCreated());
     scene.setImageSignedUrl(respondedScene.getImageSignedUrl());
   }
 
@@ -126,11 +126,12 @@ public class BaseServletTestSuite {
   void saveReactableEvent(ReactableEvent reactableEvent) throws Exception {
     resetResponseMock();
     when(mockRequest.getReader()).thenReturn(
-        TestUtil.toBufferedReader(Util.GSON.toJson(reactableEvent)));
-    theaterServlet.doPost(mockRequest, mockResponse);
+        toBufferedReader(Util.GSON.toJson(reactableEvent)));
+    interactionServlet.doPost(mockRequest, mockResponse);
     // Updates the scene id.
-    reactableEvent.setId(
-        Util.GSON.fromJson(responseWriter.toString(), ReactableEvent.class).getId());
+    ReactableEvent response = Util.GSON.fromJson(responseWriter.toString(), ReactableEvent.class);
+    reactableEvent.setId(response.getId());
+    reactableEvent.setTimestamp(response.getTimestamp());
   }
 
   /**
@@ -141,12 +142,14 @@ public class BaseServletTestSuite {
   void saveUser(User user) throws Exception {
     resetResponseMock();
     // Mocks a request body with user.
-    when(mockRequest.getReader()).thenReturn(
-        new BufferedReader(new StringReader(Util.GSON.toJson(user))));
+    when(mockRequest.getReader()).thenReturn(toBufferedReader(Util.GSON.toJson(user)));
     // Sends the POST request
     authServlet.doPost(mockRequest, mockResponse);
     // Updates the user id.
-    user.setId(Util.GSON.fromJson(responseWriter.toString(), User.class).getId());
+    User response = Util.GSON.fromJson(responseWriter.toString(), User.class);
+    user.setId(response.getId());
+    user.setJoined(response.getJoined());
+
   }
 
   void resetResponseMock() throws Exception {

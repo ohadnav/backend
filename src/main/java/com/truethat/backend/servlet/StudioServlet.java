@@ -2,9 +2,6 @@ package com.truethat.backend.servlet;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.FetchOptions;
-import com.google.appengine.api.datastore.Query;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -12,7 +9,6 @@ import com.google.gson.JsonObject;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
-import com.truethat.backend.model.User;
 import com.truethat.backend.storage.DefaultStorageClient;
 import com.truethat.backend.storage.DefaultUrlSigner;
 import com.truethat.backend.storage.StorageClient;
@@ -21,9 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
-import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -44,9 +38,6 @@ import javax.servlet.http.Part;
 public class StudioServlet extends HttpServlet {
   @VisibleForTesting
   static final String CREDENTIALS_PATH = "credentials/";
-  @VisibleForTesting static final String USER_PARAM = "user";
-  @VisibleForTesting
-  static final int GET_LIMIT = 10;
   private static final Logger LOG = Logger.getLogger(StudioServlet.class.getName());
   private static final DatastoreService DATASTORE_SERVICE =
       DatastoreServiceFactory.getDatastoreService();
@@ -114,29 +105,6 @@ public class StudioServlet extends HttpServlet {
       LOG.severe("Could not initialize storage client: " + e.getMessage());
       throw new ServletException("Could not initialize storage client: " + e.getMessage());
     }
-  }
-
-  /**
-   * Getting the user's repertoire, i.e. the {@link Reactable}s he had created.
-   *
-   * @param req with the user ID
-   */
-  @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
-    if (req.getParameter(USER_PARAM) == null) {
-      throw new IOException("Missing " + USER_PARAM + " parameter.");
-    }
-    User user = Util.GSON.fromJson(req.getParameter(USER_PARAM), User.class);
-    Query query = new Query(Reactable.DATASTORE_KIND).setFilter(
-        new Query.FilterPredicate(Reactable.DATASTORE_DIRECTOR_ID, Query.FilterOperator.EQUAL,
-            user.getId())).addSort(Reactable.DATASTORE_CREATED,
-        Query.SortDirection.DESCENDING);
-    List<Entity> result =
-        DATASTORE_SERVICE.prepare(query).asList(FetchOptions.Builder.withLimit(GET_LIMIT));
-    List<Reactable> reactables =
-        result.stream().map(Reactable::fromEntity).collect(Collectors.toList());
-    ReactableEnricher.enrich(reactables, user);
-    resp.getWriter().print(Util.GSON.toJson(reactables));
   }
 
   /**

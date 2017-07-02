@@ -2,6 +2,7 @@ package com.truethat.backend.model;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.common.annotations.VisibleForTesting;
+import com.truethat.backend.common.Util;
 import java.util.Date;
 import java.util.Objects;
 import javax.annotation.Nullable;
@@ -109,6 +110,10 @@ import javax.annotation.Nullable;
     return joined;
   }
 
+  public void setJoined(Date joined) {
+    this.joined = joined;
+  }
+
   public String getFirstName() {
     return firstName;
   }
@@ -133,5 +138,9 @@ import javax.annotation.Nullable;
     }
     if (lastName != null ? !lastName.equals(user.lastName) : user.lastName != null) return false;
     return Objects.equals(id, user.id);
+  }
+
+  @Override public String toString() {
+    return Util.GSON.toJson(this);
   }
 }
