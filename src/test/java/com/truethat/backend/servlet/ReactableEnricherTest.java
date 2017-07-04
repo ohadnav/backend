@@ -39,6 +39,11 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     saveUser(defaultUser);
   }
 
+  @Test public void enrichReactable_noReactables() throws Exception {
+    // Checks that no exceptions are thrown.
+    ReactableEnricher.enrich(Collections.emptyList(), defaultUser);
+  }
+
   @Test public void enrichReactable_reaction() throws Exception {
     ReactableEvent reactableEvent =
         new ReactableEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,

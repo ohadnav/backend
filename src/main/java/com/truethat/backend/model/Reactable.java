@@ -158,7 +158,7 @@ import javax.servlet.http.HttpServletRequest;
   public Entity toEntity() {
     Entity entity = new Entity(DATASTORE_KIND);
     entity.setProperty(DATASTORE_CREATED, created);
-    entity.setProperty(DATASTORE_DIRECTOR_ID, directorId);
+    entity.setProperty(DATASTORE_DIRECTOR_ID, getDirectorId());
     entity.setProperty(DATASTORE_TYPE, this.getClass().getSimpleName());
     return entity;
   }
