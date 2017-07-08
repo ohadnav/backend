@@ -4,6 +4,7 @@ env: flex
 env_variables:
    GOOGLE_CLOUD_PROJECT: truethat-app
    APPLICATION_NAME: TrueThat Backend Production
+   STUDIO_BUCKET: truethat-studio
 
 # Leveraging Jetty 9 & Servlet 3.1 @WebServlet annotation
 handlers:
