@@ -66,7 +66,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     studioServlet = new StudioServlet();
     // Setting mock server context.
     when(mockServletContext.getResourceAsStream(
-        StudioServlet.CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json"))
+        StudioServlet.CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json"))
         .thenReturn(new FileInputStream(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")));
     when(mockServletConfig.getServletContext()).thenReturn(mockServletContext);
     studioServlet.init(mockServletConfig);

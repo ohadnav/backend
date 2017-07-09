@@ -22,7 +22,7 @@ public class DefaultUrlSigner implements UrlSigner {
   static final String BASE_GOOGLE_CLOUD_STORAGE_URL = "https://storage.googleapis.com";
   // Google Service Account.
   private static final String CLIENT_ACCOUNT =
-      System.getenv("GOOGLE_CLOUD_PROJECT") + "@appspot.gserviceaccount.com";
+      System.getenv("__GCLOUD_PROJECT__") + "@appspot.gserviceaccount.com";
   // Default expiration is set to 24 hours
   private static final long EXPIRATION_MILLIS = TimeUnit.DAYS.toMillis(1);
 

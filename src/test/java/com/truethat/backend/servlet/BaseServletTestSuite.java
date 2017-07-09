@@ -67,7 +67,7 @@ public class BaseServletTestSuite {
     authServlet = new AuthServlet();
     // Initialize Studio servlet
     when(mockServletContext.getResourceAsStream(
-        StudioServlet.CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json"))
+        StudioServlet.CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json"))
         .thenReturn(new FileInputStream(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")));
     when(mockServletConfig.getServletContext()).thenReturn(mockServletContext);
     studioServlet = new StudioServlet();

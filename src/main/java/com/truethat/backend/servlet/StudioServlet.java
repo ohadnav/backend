@@ -84,7 +84,7 @@ public class StudioServlet extends HttpServlet {
     super.init(config);
     // Reads credentials file.
     InputStream credentialsStream = Thread.currentThread().getContextClassLoader()
-        .getResourceAsStream(CREDENTIALS_PATH + System.getenv("GOOGLE_CLOUD_PROJECT") + ".json");
+        .getResourceAsStream(CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json");
     try {
       String credentialsString = Util.inputStreamToString(credentialsStream);
       JsonObject credentials =

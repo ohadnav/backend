@@ -21,7 +21,7 @@ public class DefaultStorageClient implements StorageClient {
   @Override public void addBucket(String bucketName) throws IOException {
     Bucket bucket = new Bucket();
     bucket.setName(bucketName);
-    client.buckets().insert(System.getenv("GOOGLE_CLOUD_PROJECT"), bucket).execute();
+    client.buckets().insert(System.getenv("__GCLOUD_PROJECT__"), bucket).execute();
   }
 
   @Override public String save(String destinationName, String contentType, InputStream inputStream,
@@ -39,7 +39,7 @@ public class DefaultStorageClient implements StorageClient {
     return insertRequest.execute().getName();
   }
 
-  public Storage getClient() {
+  Storage getClient() {
     return client;
   }
 }

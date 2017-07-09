@@ -2,7 +2,7 @@ runtime: java
 env: flex
 
 env_variables:
-   GOOGLE_CLOUD_PROJECT: truethat-app
+   __GCLOUD_PROJECT__: truethat-app
    APPLICATION_NAME: TrueThat Backend Production
    STUDIO_BUCKET: truethat-studio
 
