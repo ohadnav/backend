@@ -4,7 +4,7 @@ import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.ReactableEvent;
+import com.truethat.backend.model.Interaction;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -23,15 +23,15 @@ public class InteractionServlet extends HttpServlet {
       DatastoreServiceFactory.getDatastoreService();
 
   /**
-   * Saves events to Datastore, and response the saved {@link ReactableEvent}.
+   * Saves events to Datastore, and response the saved {@link Interaction}.
    */
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
-    ReactableEvent reactableEvent = Util.GSON.fromJson(req.getReader(), ReactableEvent.class);
-    Entity toPut = reactableEvent.toEntity();
+    Interaction interaction = Util.GSON.fromJson(req.getReader(), Interaction.class);
+    Entity toPut = interaction.toEntity();
     DATASTORE_SERVICE.put(toPut);
-    reactableEvent.setId(toPut.getKey().getId());
-    resp.getWriter().print(Util.GSON.toJson(reactableEvent));
+    interaction.setId(toPut.getKey().getId());
+    resp.getWriter().print(Util.GSON.toJson(interaction));
   }
 }

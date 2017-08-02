@@ -10,8 +10,8 @@ import com.google.appengine.api.datastore.Query;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Emotion;
 import com.truethat.backend.model.EventType;
+import com.truethat.backend.model.Interaction;
 import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.ReactableEvent;
 import com.truethat.backend.model.User;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ class ReactableEnricher {
       DatastoreServiceFactory.getDatastoreService();
 
   /**
-   * Enriches {@link Reactable}s with data of {@link User} and {@link ReactableEvent}s.
+   * Enriches {@link Reactable}s with data of {@link User} and {@link Interaction}s.
    *
    * @param reactables to enrich
    * @param user       for which to enrich the reactables.
@@ -90,56 +90,56 @@ class ReactableEnricher {
         reactables.stream().map(Reactable::getId).collect(toSet());
     for (Long reactableId : reactablesIds) {
       filters.add(
-          new Query.FilterPredicate(ReactableEvent.DATASTORE_REACTABLE_ID,
+          new Query.FilterPredicate(Interaction.DATASTORE_REACTABLE_ID,
               Query.FilterOperator.EQUAL,
               reactableId));
     }
-    Query query = new Query(ReactableEvent.DATASTORE_KIND);
+    Query query = new Query(Interaction.DATASTORE_KIND);
     Util.setFilter(query, filters, Query.CompositeFilterOperator.OR);
     if (!filters.isEmpty()) {
-      List<ReactableEvent> allEvents = DATASTORE_SERVICE.prepare(query)
+      List<Interaction> allEvents = DATASTORE_SERVICE.prepare(query)
           .asList(FetchOptions.Builder.withDefaults())
           .stream()
-          .map(ReactableEvent::new)
+          .map(Interaction::new)
           .collect(toList());
-      Map<Long, List<ReactableEvent>> eventByReactableId =
-          allEvents.stream().collect(groupingBy(ReactableEvent::getReactableId, toList()));
+      Map<Long, List<Interaction>> eventByReactableId =
+          allEvents.stream().collect(groupingBy(Interaction::getReactableId, toList()));
       for (Reactable reactable : reactables) {
         boolean isUserDirector = user.getId() == reactable.getDirectorId();
         if (isUserDirector) {
           reactable.setViewed(true);
         }
         if (eventByReactableId.containsKey(reactable.getId())) {
-          List<ReactableEvent> reactableEvents = eventByReactableId.get(reactable.getId());
+          List<Interaction> interactions = eventByReactableId.get(reactable.getId());
           // Determine whether {@code reactable} was viewed by {@code user}.
           boolean viewed = reactable.isViewed();
           if (!viewed) {
-            viewed = reactableEvents.stream()
-                .anyMatch(reactableEvent -> reactableEvent.getUserId() == user.getId()
-                    && reactableEvent.getEventType() == EventType.REACTABLE_VIEW);
+            viewed = interactions.stream()
+                .anyMatch(interaction -> interaction.getUserId() == user.getId()
+                    && interaction.getEventType() == EventType.REACTABLE_VIEW);
           }
           reactable.setViewed(viewed);
           // Calculate reaction counters.
-          Map<Emotion, Long> reactionCounters = reactableEvents.parallelStream()
+          Map<Emotion, Long> reactionCounters = interactions.parallelStream()
               // Filter for reaction event not of the user.
               .filter(
-                  reactableEvent -> reactableEvent.getEventType() == EventType.REACTABLE_REACTION
-                      && reactableEvent.getUserId() != reactable.getDirectorId())
+                  interaction -> interaction.getEventType() == EventType.REACTABLE_REACTION
+                      && interaction.getUserId() != reactable.getDirectorId())
               // Group by reactions
-              .collect(groupingBy(ReactableEvent::getReaction,
+              .collect(groupingBy(Interaction::getReaction,
                   // Group by user IDs, to avoid duplicates
-                  collectingAndThen(groupingBy(ReactableEvent::getUserId, counting()),
+                  collectingAndThen(groupingBy(Interaction::getUserId, counting()),
                       userIds -> (long) userIds.keySet().size())));
           reactable.setReactionCounters(reactionCounters);
           // Determine user reaction.
           if (!isUserDirector) {
             // Find a reaction event of user.
-            Optional<ReactableEvent> reactionEvent = reactableEvents.stream()
-                .filter(reactableEvent -> reactableEvent.getUserId() == user.getId()
-                    && reactableEvent.getEventType() == EventType.REACTABLE_REACTION)
+            Optional<Interaction> reactionEvent = interactions.stream()
+                .filter(interaction -> interaction.getUserId() == user.getId()
+                    && interaction.getEventType() == EventType.REACTABLE_REACTION)
                 .findAny();
             reactionEvent.ifPresent(
-                reactableEvent -> reactable.setUserReaction(reactableEvent.getReaction()));
+                interaction -> reactable.setUserReaction(interaction.getReaction()));
           }
         }
       }

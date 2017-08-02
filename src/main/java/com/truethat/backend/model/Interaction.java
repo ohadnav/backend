@@ -8,13 +8,13 @@ import javax.annotation.Nullable;
 /**
  * Proudly created by ohad on 11/06/2017.
  *
- * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/ReactableEvent.java</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Interaction.java</a>
  */
-@SuppressWarnings("FieldCanBeLocal") public class ReactableEvent {
+@SuppressWarnings("FieldCanBeLocal") public class Interaction {
   /**
    * Datastore kind.
    */
-  public static final String DATASTORE_KIND = "ReactableEvent";
+  public static final String DATASTORE_KIND = "Interaction";
   /**
    * Datastore column names.
    */
@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
   public static final String DATASTORE_REACTION = "reaction";
 
   /**
-   * ReactableEvent ID, as defined by its datastore key.
+   * Interaction ID, as defined by its datastore key.
    */
   @SuppressWarnings("unused") private Long id;
 
@@ -56,7 +56,7 @@ import javax.annotation.Nullable;
    */
   private long reactableId;
 
-  public ReactableEvent(Entity entity) {
+  public Interaction(Entity entity) {
     if (entity.getProperty(DATASTORE_USER_ID) != null) {
       userId = (Long) entity.getProperty(DATASTORE_USER_ID);
     }
@@ -75,7 +75,7 @@ import javax.annotation.Nullable;
     id = entity.getKey().getId();
   }
   @VisibleForTesting
-  public ReactableEvent(long userId, long reactableId, Date timestamp, EventType eventType,
+  public Interaction(long userId, long reactableId, Date timestamp, EventType eventType,
       @Nullable
       Emotion reaction) {
     this.timestamp = timestamp;
@@ -86,15 +86,15 @@ import javax.annotation.Nullable;
   }
 
   public Entity toEntity() {
-    Entity entity = new Entity(ReactableEvent.DATASTORE_KIND);
-    entity.setProperty(ReactableEvent.DATASTORE_REACTABLE_ID, reactableId);
-    entity.setProperty(ReactableEvent.DATASTORE_TIMESTAMP, timestamp);
+    Entity entity = new Entity(Interaction.DATASTORE_KIND);
+    entity.setProperty(Interaction.DATASTORE_REACTABLE_ID, reactableId);
+    entity.setProperty(Interaction.DATASTORE_TIMESTAMP, timestamp);
     if (eventType != null) {
-      entity.setProperty(ReactableEvent.DATASTORE_EVENT_TYPE, eventType.getCode());
+      entity.setProperty(Interaction.DATASTORE_EVENT_TYPE, eventType.getCode());
     }
-    entity.setProperty(ReactableEvent.DATASTORE_USER_ID, userId);
+    entity.setProperty(Interaction.DATASTORE_USER_ID, userId);
     if (reaction != null) {
-      entity.setProperty(ReactableEvent.DATASTORE_REACTION, reaction.getCode());
+      entity.setProperty(Interaction.DATASTORE_REACTION, reaction.getCode());
     }
     return entity;
   }

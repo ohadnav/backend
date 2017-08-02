@@ -1,8 +1,8 @@
 package com.truethat.backend.common;
 
 import com.google.appengine.api.datastore.Entity;
+import com.truethat.backend.model.Interaction;
 import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.ReactableEvent;
 import com.truethat.backend.model.Scene;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -27,19 +27,19 @@ public class TestUtil {
     return new BufferedReader(new StringReader(s));
   }
 
-  public static void assertEqualsForEntityAndReactableEvent(Entity entity,
-      ReactableEvent reactableEvent) {
-    assertEquals(reactableEvent.getUserId(), entity.getProperty(ReactableEvent.DATASTORE_USER_ID));
-    assertEquals(reactableEvent.getReactableId(),
-        entity.getProperty(ReactableEvent.DATASTORE_REACTABLE_ID));
-    assertEquals(reactableEvent.getTimestamp(),
-        entity.getProperty(ReactableEvent.DATASTORE_TIMESTAMP));
+  public static void assertEqualsForEntityAndInteraction(Entity entity,
+      Interaction interaction) {
+    assertEquals(interaction.getUserId(), entity.getProperty(Interaction.DATASTORE_USER_ID));
+    assertEquals(interaction.getReactableId(),
+        entity.getProperty(Interaction.DATASTORE_REACTABLE_ID));
+    assertEquals(interaction.getTimestamp(),
+        entity.getProperty(Interaction.DATASTORE_TIMESTAMP));
     // Event code is assumed to be a non null int.
-    assertEquals(reactableEvent.getEventType().getCode(),
-        ((Long) entity.getProperty(ReactableEvent.DATASTORE_EVENT_TYPE)).intValue());
-    Long entityReactionCode = (Long) entity.getProperty(ReactableEvent.DATASTORE_REACTION);
-    if (reactableEvent.getReaction() != null) {
-      assertEquals(reactableEvent.getReaction().getCode(), entityReactionCode.intValue());
+    assertEquals(interaction.getEventType().getCode(),
+        ((Long) entity.getProperty(Interaction.DATASTORE_EVENT_TYPE)).intValue());
+    Long entityReactionCode = (Long) entity.getProperty(Interaction.DATASTORE_REACTION);
+    if (interaction.getReaction() != null) {
+      assertEquals(interaction.getReaction().getCode(), entityReactionCode.intValue());
     } else {
       assertNull(entityReactionCode);
     }
