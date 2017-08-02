@@ -4,7 +4,7 @@ import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Interaction;
+import com.truethat.backend.model.InteractionEvent;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -17,21 +17,21 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/InteractionAPI.java</a>
  */
-@WebServlet(value = "/interaction", name = "Interaction")
+@WebServlet(value = "/interaction", name = "InteractionEvent")
 public class InteractionServlet extends HttpServlet {
   private static final DatastoreService DATASTORE_SERVICE =
       DatastoreServiceFactory.getDatastoreService();
 
   /**
-   * Saves events to Datastore, and response the saved {@link Interaction}.
+   * Saves events to Datastore, and response the saved {@link InteractionEvent}.
    */
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
-    Interaction interaction = Util.GSON.fromJson(req.getReader(), Interaction.class);
-    Entity toPut = interaction.toEntity();
+    InteractionEvent interactionEvent = Util.GSON.fromJson(req.getReader(), InteractionEvent.class);
+    Entity toPut = interactionEvent.toEntity();
     DATASTORE_SERVICE.put(toPut);
-    interaction.setId(toPut.getKey().getId());
-    resp.getWriter().print(Util.GSON.toJson(interaction));
+    interactionEvent.setId(toPut.getKey().getId());
+    resp.getWriter().print(Util.GSON.toJson(interactionEvent));
   }
 }

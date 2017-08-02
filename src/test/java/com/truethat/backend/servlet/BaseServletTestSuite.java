@@ -6,7 +6,7 @@ import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestC
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Interaction;
+import com.truethat.backend.model.InteractionEvent;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
@@ -119,19 +119,20 @@ public class BaseServletTestSuite {
   }
 
   /**
-   * Saves a {@link Interaction} to datastore and updates {@code interaction} id.
+   * Saves a {@link InteractionEvent} to datastore and updates {@code interactionEvent} id.
    *
-   * @param interaction to save
+   * @param interactionEvent to save
    */
-  void saveInteraction(Interaction interaction) throws Exception {
+  void saveInteraction(InteractionEvent interactionEvent) throws Exception {
     resetResponseMock();
     when(mockRequest.getReader()).thenReturn(
-        toBufferedReader(Util.GSON.toJson(interaction)));
+        toBufferedReader(Util.GSON.toJson(interactionEvent)));
     interactionServlet.doPost(mockRequest, mockResponse);
     // Updates the scene id.
-    Interaction response = Util.GSON.fromJson(responseWriter.toString(), Interaction.class);
-    interaction.setId(response.getId());
-    interaction.setTimestamp(response.getTimestamp());
+    InteractionEvent response =
+        Util.GSON.fromJson(responseWriter.toString(), InteractionEvent.class);
+    interactionEvent.setId(response.getId());
+    interactionEvent.setTimestamp(response.getTimestamp());
   }
 
   /**
