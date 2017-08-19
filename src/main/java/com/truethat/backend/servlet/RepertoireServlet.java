@@ -37,6 +37,7 @@ public class RepertoireServlet extends HttpServlet {
   @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
+    if (user == null) throw new IOException("Missing user");
     Query query = new Query(Reactable.DATASTORE_KIND).setFilter(
         new Query.FilterPredicate(Reactable.DATASTORE_DIRECTOR_ID, Query.FilterOperator.EQUAL,
             user.getId())).addSort(Reactable.DATASTORE_CREATED,

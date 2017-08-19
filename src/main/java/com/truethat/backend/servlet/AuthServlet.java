@@ -31,6 +31,7 @@ public class AuthServlet extends HttpServlet {
   @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
+    if (user == null) throw new IOException("Missing user");
     Entity userEntity = user.toEntity();
     // Entity whose key is ultimately responded.
     Entity toPut = userEntity;
