@@ -30,6 +30,9 @@ public class InteractionServlet extends HttpServlet {
       throws ServletException, IOException {
     InteractionEvent interactionEvent = Util.GSON.fromJson(req.getReader(), InteractionEvent.class);
     if (interactionEvent == null) throw new IOException("Missing interaction event");
+    if (!interactionEvent.isValid()) {
+      throw new IOException("Invalid interaction event: " + Util.GSON.toJson(interactionEvent));
+    }
     Entity toPut = interactionEvent.toEntity();
     DATASTORE_SERVICE.put(toPut);
     interactionEvent.setId(toPut.getKey().getId());

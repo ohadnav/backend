@@ -85,6 +85,17 @@ import javax.annotation.Nullable;
     this.reactableId = reactableId;
   }
 
+  /**
+   * @return whether the event has a valid data.
+   */
+  public boolean isValid() {
+    if (eventType == null) return false;
+    if (eventType == EventType.REACTABLE_VIEW) return reaction == null;
+    if (eventType == EventType.REACTABLE_REACTION) return reaction != null;
+    // Should not reach here.
+    return false;
+  }
+
   public Entity toEntity() {
     Entity entity = new Entity(InteractionEvent.DATASTORE_KIND);
     entity.setProperty(InteractionEvent.DATASTORE_REACTABLE_ID, reactableId);
