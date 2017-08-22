@@ -3,13 +3,12 @@ package com.truethat.backend.servlet;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.User;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import javax.annotation.Nullable;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -33,50 +32,66 @@ public class AuthServlet extends HttpServlet {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     if (user == null) throw new IOException("Missing user");
     Entity userEntity = user.toEntity();
-    // Entity whose key is ultimately responded.
-    Entity toPut = userEntity;
-    Entity similarUserEntity = similarUser(userEntity);
-    boolean shouldCreateNewUser = true;
-    if (similarUserEntity != null) {
-      // If a similar user was found, then don't create a new one in datastore,
-      // and use its ID for the response.
-      toPut = similarUserEntity;
-      shouldCreateNewUser = false;
+    // If ID is missing, then it is a sign up or a sign in.
+    if (!user.hasId()) {
+      // Entity whose key is ultimately responded.
+      Entity toPut = userEntity;
+      Entity similarUserEntity = similarUser(userEntity);
+      boolean shouldCreateNewUser = true;
+      if (similarUserEntity != null) {
+        // If a similar user was found, then don't create a new one in datastore,
+        // and use its ID for the response.
+        toPut = similarUserEntity;
+        shouldCreateNewUser = false;
+      }
+      if (shouldCreateNewUser || updateIfShould(toPut, userEntity)) {
+        DATASTORE_SERVICE.put(toPut);
+      }
+      resp.getWriter().print(Util.GSON.toJson(new User(toPut)));
+    } else {
+      // Otherwise, it is a routine authentication.
+      Entity existingUser = findUser(user);
+      //noinspection StatementWithEmptyBody
+      if (existingUser == null) {
+        // Auth failed
+      } else {
+        if (updateIfShould(existingUser, userEntity)) {
+          DATASTORE_SERVICE.put(existingUser);
+        }
+        resp.getWriter().print(Util.GSON.toJson(new User(existingUser)));
+      }
     }
-    if (shouldCreateNewUser || updateIfShould(toPut, userEntity)) {
-      DATASTORE_SERVICE.put(toPut);
-    }
-    resp.getWriter().print(Util.GSON.toJson(new User(toPut)));
   }
 
   /**
-   * Creates a query that looks for similar users. Similar users share the same device ID or phone
-   * number. For the time being, these two attributes are assumed to be unique.
+   * Creates a query that looks for similar users. Similar users share the same device ID or user
+   * ID.
    *
-   * @param userEntity that be authenticated.
+   * @param userEntity that is being authenticated.
    * @return a query that looks for similar users. Null if no query filters could be derived from
    * {@code userEntity}.
    */
   private @Nullable Entity similarUser(Entity userEntity) {
     Entity similarUserEntity = null;
-    Query query = new Query(User.DATASTORE_KIND);
-    List<Query.Filter> filters = new ArrayList<>();
     if (userEntity.hasProperty(User.DATASTORE_DEVICE_ID)) {
-      filters.add(new Query.FilterPredicate(User.DATASTORE_DEVICE_ID, Query.FilterOperator.EQUAL,
-          userEntity.getProperty(User.DATASTORE_DEVICE_ID)));
-    }
-    if (userEntity.hasProperty(User.DATASTORE_PHONE_NUMBER)) {
-      filters.add(new Query.FilterPredicate(User.DATASTORE_PHONE_NUMBER, Query.FilterOperator.EQUAL,
-          userEntity.getProperty(User.DATASTORE_PHONE_NUMBER)));
-    }
-    Util.setFilter(query, filters, Query.CompositeFilterOperator.OR);
-    if (!filters.isEmpty()) {
+      Query query = new Query(User.DATASTORE_KIND);
+      query.setFilter(
+          new Query.FilterPredicate(User.DATASTORE_DEVICE_ID, Query.FilterOperator.EQUAL,
+              userEntity.getProperty(User.DATASTORE_DEVICE_ID)));
       Iterator<Entity> existingUsers = DATASTORE_SERVICE.prepare(query).asIterable().iterator();
       if (existingUsers.hasNext()) {
         similarUserEntity = existingUsers.next();
       }
     }
     return similarUserEntity;
+  }
+
+  private @Nullable Entity findUser(User user) {
+    Query query = new Query(User.DATASTORE_KIND);
+    query.setFilter(
+        new Query.FilterPredicate(Entity.KEY_RESERVED_PROPERTY, Query.FilterOperator.EQUAL,
+            KeyFactory.createKey(User.DATASTORE_KIND, user.getId())));
+    return DATASTORE_SERVICE.prepare(query).asSingleEntity();
   }
 
   /**
@@ -89,13 +104,6 @@ public class AuthServlet extends HttpServlet {
    */
   private boolean updateIfShould(Entity existing, Entity fromClient) {
     boolean updated = false;
-    if (fromClient.getProperty(User.DATASTORE_PHONE_NUMBER) != null &&
-        existing.getProperty(User.DATASTORE_PHONE_NUMBER) != fromClient.getProperty(
-            User.DATASTORE_PHONE_NUMBER)) {
-      existing.setProperty(User.DATASTORE_PHONE_NUMBER,
-          fromClient.getProperty(User.DATASTORE_PHONE_NUMBER));
-      updated = true;
-    }
     if (fromClient.getProperty(User.DATASTORE_FIRST_NAME) != null &&
         existing.getProperty(User.DATASTORE_FIRST_NAME) != fromClient.getProperty(
             User.DATASTORE_FIRST_NAME)) {

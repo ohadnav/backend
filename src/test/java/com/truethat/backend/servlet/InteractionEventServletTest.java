@@ -17,7 +17,7 @@ import static com.truethat.backend.common.TestUtil.assertEqualsForEntityAndInter
 public class InteractionEventServletTest extends BaseServletTestSuite {
   private Scene scene;
   private User director =
-      new User(PHONE_NUMBER + "-2", DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
+      new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
 
   @Override public void setUp() throws Exception {
     super.setUp();

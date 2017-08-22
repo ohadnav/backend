@@ -28,8 +28,8 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
   @Override public void setUp() throws Exception {
     super.setUp();
     // Adds the director of the scene to datastore
-    director = new User(PHONE_NUMBER + "-2", DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
-    friend = new User("911", "my-phone", "the", "terminator", NOW);
+    director = new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
+    friend = new User("my-phone", "the", "terminator", NOW);
     saveUser(director);
     saveUser(friend);
     // Saves a scene.
@@ -137,7 +137,6 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     assertEquals(director.getFirstName(), scene.getDirector().getFirstName());
     assertEquals(director.getLastName(), scene.getDirector().getLastName());
     // Private information should not be passed.
-    assertNull(scene.getDirector().getPhoneNumber());
     assertNull(scene.getDirector().getDeviceId());
   }
 }

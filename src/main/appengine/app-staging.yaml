@@ -2,9 +2,9 @@ runtime: java
 env: flex
 
 env_variables:
-   __GCLOUD_PROJECT__: truethat-app
-   APPLICATION_NAME: TrueThat Backend Production
-   STUDIO_BUCKET: truethat-studio
+   __GCLOUD_PROJECT__: truethat-staging
+   APPLICATION_NAME: TrueThat Backend Staging
+   STUDIO_BUCKET: truethat-staging-studio
    DATASTORE_USE_PROJECT_ID_AS_APP_ID: true
 
 # Leveraging Jetty 9 & Servlet 3.1 @WebServlet annotation

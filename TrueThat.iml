@@ -14,7 +14,7 @@
     </facet>
     <facet type="app-engine-flexible" name="Google App Engine Flexible">
       <configuration>
-        <option name="appYamlPath" value="$MODULE_DIR$/src/main/appengine/app.yaml" />
+        <option name="appYamlPath" value="$MODULE_DIR$/src/main/appengine/app-staging.yaml" />
         <option name="dockerDirectory" value="$MODULE_DIR$/src/main/docker" />
       </configuration>
     </facet>

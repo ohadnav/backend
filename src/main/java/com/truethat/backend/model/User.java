@@ -20,22 +20,28 @@ import javax.annotation.Nullable;
   // ----------------- Datastore column names -------------------------
   public static final String DATASTORE_JOINED = "joined";
 
-  public static final String DATASTORE_PHONE_NUMBER = "phoneNumber";
   public static final String DATASTORE_DEVICE_ID = "deviceId";
   public static final String DATASTORE_FIRST_NAME = "firstName";
   public static final String DATASTORE_LAST_NAME = "lastName";
 
+  /**
+   * Time of account creation.
+   */
   private Date joined;
-
-  private String phoneNumber;
-
+  /**
+   * Psuedo-unique ID of user's device
+   */
   private String deviceId;
-
+  /**
+   * How her mom calls her.
+   */
   private String firstName;
-
+  /**
+   * How his commander calls him.
+   */
   private String lastName;
   /**
-   * Client ID, should match datastore key.
+   * Client ID, that matches datastore key.
    */
   @SuppressWarnings({"unused", "FieldCanBeLocal"}) private Long id;
 
@@ -46,9 +52,6 @@ import javax.annotation.Nullable;
     if (entity.getProperty(DATASTORE_LAST_NAME) != null) {
       lastName = (String) entity.getProperty(DATASTORE_LAST_NAME);
     }
-    if (entity.getProperty(DATASTORE_PHONE_NUMBER) != null) {
-      phoneNumber = (String) entity.getProperty(DATASTORE_PHONE_NUMBER);
-    }
     if (entity.getProperty(DATASTORE_DEVICE_ID) != null) {
       deviceId = (String) entity.getProperty(DATASTORE_DEVICE_ID);
     }
@@ -58,9 +61,8 @@ import javax.annotation.Nullable;
     id = entity.getKey().getId();
   }
 
-  @VisibleForTesting public User(@Nullable String phoneNumber, @Nullable String deviceId,
+  @VisibleForTesting public User(@Nullable String deviceId,
       @Nullable String firstName, @Nullable String lastName, Date joined) {
-    this.phoneNumber = phoneNumber;
     this.deviceId = deviceId;
     this.firstName = firstName;
     this.lastName = lastName;
@@ -75,9 +77,6 @@ import javax.annotation.Nullable;
     Entity entity = new Entity(User.DATASTORE_KIND);
     // Current date is set, as mobile frontend does not use that field.
     entity.setProperty(DATASTORE_JOINED, new Date());
-    if (phoneNumber != null) {
-      entity.setProperty(DATASTORE_PHONE_NUMBER, phoneNumber);
-    }
     if (deviceId != null) {
       entity.setProperty(DATASTORE_DEVICE_ID, deviceId);
     }
@@ -90,16 +89,15 @@ import javax.annotation.Nullable;
     return entity;
   }
 
+  public boolean hasId() {
+    return id != null;
+  }
   public long getId() {
     return id;
   }
 
-  public void setId(long id) {
+  public void setId(Long id) {
     this.id = id;
-  }
-
-  public String getPhoneNumber() {
-    return phoneNumber;
   }
 
   public String getDeviceId() {
@@ -118,6 +116,10 @@ import javax.annotation.Nullable;
     return firstName;
   }
 
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
   public String getLastName() {
     return lastName;
   }
@@ -129,9 +131,6 @@ import javax.annotation.Nullable;
     User user = (User) o;
 
     if (joined != null ? !joined.equals(user.joined) : user.joined != null) return false;
-    if (phoneNumber != null ? !phoneNumber.equals(user.phoneNumber) : user.phoneNumber != null) {
-      return false;
-    }
     if (deviceId != null ? !deviceId.equals(user.deviceId) : user.deviceId != null) return false;
     if (firstName != null ? !firstName.equals(user.firstName) : user.firstName != null) {
       return false;

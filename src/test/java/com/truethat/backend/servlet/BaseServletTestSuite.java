@@ -46,8 +46,8 @@ public class BaseServletTestSuite {
   @Mock HttpServletResponse mockResponse;
   StringWriter responseWriter;
   StudioServlet studioServlet;
+  AuthServlet authServlet;
   private InteractionServlet interactionServlet;
-  private AuthServlet authServlet;
   private LocalServiceTestHelper localServiceTestHelper =
       new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
   @Mock
@@ -79,7 +79,7 @@ public class BaseServletTestSuite {
     studioServlet.setStorageClient(storageClient);
     localServiceTestHelper.setUp();
     // Initializes user
-    defaultUser = new User(PHONE_NUMBER, DEVICE_ID, FIRST_NAME, LAST_NAME, NOW);
+    defaultUser = new User(DEVICE_ID, FIRST_NAME, LAST_NAME, NOW);
   }
 
   @After
