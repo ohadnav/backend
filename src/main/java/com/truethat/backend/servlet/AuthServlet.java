@@ -1,14 +1,17 @@
 package com.truethat.backend.servlet;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Query;
+import com.google.cloud.datastore.Datastore;
+import com.google.cloud.datastore.DatastoreOptions;
+import com.google.cloud.datastore.Entity;
+import com.google.cloud.datastore.FullEntity;
+import com.google.cloud.datastore.KeyFactory;
+import com.google.cloud.datastore.Query;
+import com.google.cloud.datastore.QueryResults;
+import com.google.cloud.datastore.StructuredQuery;
+import com.google.common.base.Strings;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.User;
 import java.io.IOException;
-import java.util.Iterator;
 import javax.annotation.Nullable;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -24,30 +27,34 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet(value = "/auth", name = "Auth")
 public class AuthServlet extends HttpServlet {
-  private static final DatastoreService DATASTORE_SERVICE =
-      DatastoreServiceFactory.getDatastoreService();
+  private Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
+  private KeyFactory userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
+
+  public AuthServlet setDatastore(Datastore datastore) {
+    this.datastore = datastore;
+    userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
+    return this;
+  }
 
   @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
+    User respondedUser = null;
     if (user == null) throw new IOException("Missing user");
-    Entity userEntity = user.toEntity();
+    FullEntity userEntity = user.toEntityBuilder(userKeyFactory).build();
     // If ID is missing, then it is a sign up or a sign in.
     if (!user.hasId()) {
-      // Entity whose key is ultimately responded.
-      Entity toPut = userEntity;
-      Entity similarUserEntity = similarUser(userEntity);
-      boolean shouldCreateNewUser = true;
+      Entity similarUserEntity = similarUser(user);
       if (similarUserEntity != null) {
         // If a similar user was found, then don't create a new one in datastore,
         // and use its ID for the response.
-        toPut = similarUserEntity;
-        shouldCreateNewUser = false;
+        Entity mergedEntity = merge(similarUserEntity, user).build();
+        datastore.update(mergedEntity);
+        respondedUser = new User(mergedEntity);
+      } else {
+        // Put a new entity in datastore.
+        respondedUser = new User(datastore.add(userEntity));
       }
-      if (shouldCreateNewUser || updateIfShould(toPut, userEntity)) {
-        DATASTORE_SERVICE.put(toPut);
-      }
-      resp.getWriter().print(Util.GSON.toJson(new User(toPut)));
     } else {
       // Otherwise, it is a routine authentication.
       Entity existingUser = findUser(user);
@@ -55,11 +62,16 @@ public class AuthServlet extends HttpServlet {
       if (existingUser == null) {
         // Auth failed
       } else {
-        if (updateIfShould(existingUser, userEntity)) {
-          DATASTORE_SERVICE.put(existingUser);
+        Entity mergedEntity = merge(existingUser, user).build();
+        if (!mergedEntity.equals(existingUser)) {
+          // Should update existing user.
+          datastore.update(mergedEntity);
         }
-        resp.getWriter().print(Util.GSON.toJson(new User(existingUser)));
+        respondedUser = new User(mergedEntity);
       }
+    }
+    if (respondedUser != null) {
+      resp.getWriter().print(Util.GSON.toJson(respondedUser));
     }
   }
 
@@ -67,18 +79,19 @@ public class AuthServlet extends HttpServlet {
    * Creates a query that looks for similar users. Similar users share the same device ID or user
    * ID.
    *
-   * @param userEntity that is being authenticated.
+   * @param user that is being authenticated.
+   *
    * @return a query that looks for similar users. Null if no query filters could be derived from
    * {@code userEntity}.
    */
-  private @Nullable Entity similarUser(Entity userEntity) {
+  private @Nullable Entity similarUser(User user) {
     Entity similarUserEntity = null;
-    if (userEntity.hasProperty(User.DATASTORE_DEVICE_ID)) {
-      Query query = new Query(User.DATASTORE_KIND);
-      query.setFilter(
-          new Query.FilterPredicate(User.DATASTORE_DEVICE_ID, Query.FilterOperator.EQUAL,
-              userEntity.getProperty(User.DATASTORE_DEVICE_ID)));
-      Iterator<Entity> existingUsers = DATASTORE_SERVICE.prepare(query).asIterable().iterator();
+    if (!Strings.isNullOrEmpty(user.getDeviceId())) {
+      Query<Entity> query = Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND)
+          .setFilter(StructuredQuery.PropertyFilter.eq(User.DATASTORE_DEVICE_ID,
+              user.getDeviceId()))
+          .build();
+      QueryResults<Entity> existingUsers = datastore.run(query);
       if (existingUsers.hasNext()) {
         similarUserEntity = existingUsers.next();
       }
@@ -87,44 +100,32 @@ public class AuthServlet extends HttpServlet {
   }
 
   private @Nullable Entity findUser(User user) {
-    Query query = new Query(User.DATASTORE_KIND);
-    query.setFilter(
-        new Query.FilterPredicate(Entity.KEY_RESERVED_PROPERTY, Query.FilterOperator.EQUAL,
-            KeyFactory.createKey(User.DATASTORE_KIND, user.getId())));
-    return DATASTORE_SERVICE.prepare(query).asSingleEntity();
+    if (user.hasId()) {
+      return datastore.get(userKeyFactory.newKey(user.getId()));
+    }
+    return null;
   }
 
   /**
-   * Updates {@code existing} with fresh data from {@code fromClient}. More technically, looks for
-   * non-null fields in {@code fromClient} that have different values than {@code existing}.
+   * Merges data from {@code fromClient} into {@code existing}. Data from client is preferred over
+   * existing one.
    *
    * @param existing   {@link User} entity that is found in datastore
-   * @param fromClient {@link User} entity that was provided by the client for authentication.
-   * @return whether changes were applied
+   * @param fromClient that was provided by the client for authentication.
+   *
+   * @return an entity builder with the merged data.
    */
-  private boolean updateIfShould(Entity existing, Entity fromClient) {
-    boolean updated = false;
-    if (fromClient.getProperty(User.DATASTORE_FIRST_NAME) != null &&
-        existing.getProperty(User.DATASTORE_FIRST_NAME) != fromClient.getProperty(
-            User.DATASTORE_FIRST_NAME)) {
-      existing.setProperty(User.DATASTORE_FIRST_NAME,
-          fromClient.getProperty(User.DATASTORE_FIRST_NAME));
-      updated = true;
+  private Entity.Builder merge(Entity existing, User fromClient) {
+    Entity.Builder builder = Entity.newBuilder(existing);
+    if (!Strings.isNullOrEmpty(fromClient.getFirstName())) {
+      builder.set(User.DATASTORE_FIRST_NAME, fromClient.getFirstName());
     }
-    if (fromClient.getProperty(User.DATASTORE_LAST_NAME) != null &&
-        existing.getProperty(User.DATASTORE_LAST_NAME) != fromClient.getProperty(
-            User.DATASTORE_LAST_NAME)) {
-      existing.setProperty(User.DATASTORE_LAST_NAME,
-          fromClient.getProperty(User.DATASTORE_LAST_NAME));
-      updated = true;
+    if (!Strings.isNullOrEmpty(fromClient.getLastName())) {
+      builder.set(User.DATASTORE_LAST_NAME, fromClient.getLastName());
     }
-    if (fromClient.getProperty(User.DATASTORE_DEVICE_ID) != null &&
-        existing.getProperty(User.DATASTORE_DEVICE_ID) != fromClient.getProperty(
-            User.DATASTORE_DEVICE_ID)) {
-      existing.setProperty(User.DATASTORE_DEVICE_ID,
-          fromClient.getProperty(User.DATASTORE_DEVICE_ID));
-      updated = true;
+    if (!Strings.isNullOrEmpty(fromClient.getDeviceId())) {
+      builder.set(User.DATASTORE_DEVICE_ID, fromClient.getDeviceId());
     }
-    return updated;
+    return builder;
   }
 }

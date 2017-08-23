@@ -1,10 +1,14 @@
 package com.truethat.backend.model;
 
-import com.google.appengine.api.datastore.Entity;
+import com.google.cloud.Timestamp;
+import com.google.cloud.datastore.Entity;
+import com.google.cloud.datastore.FullEntity;
+import com.google.cloud.datastore.IncompleteKey;
+import com.google.cloud.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.io.ByteStreams;
 import com.truethat.backend.servlet.StudioServlet;
 import java.io.IOException;
-import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Part;
 
@@ -23,7 +27,7 @@ public class Scene extends Reactable {
   /**
    * Datastore column names.
    */
-  public static final String DATASTORE_IMAGE_SIGNED_URL = "imageSignedUrl";
+  private static final String DATASTORE_IMAGE_SIGNED_URL = "imageSignedUrl";
   /**
    * Sub path for scene images within the storage bucket.
    */
@@ -38,30 +42,33 @@ public class Scene extends Reactable {
 
   Scene(Entity entity) {
     super(entity);
-    imageSignedUrl = (String) entity.getProperty(DATASTORE_IMAGE_SIGNED_URL);
+    if (entity.contains(DATASTORE_IMAGE_SIGNED_URL)) {
+      imageSignedUrl = entity.getString(DATASTORE_IMAGE_SIGNED_URL);
+    }
   }
 
-  @VisibleForTesting public Scene(Long directorId, Date created, String imageSignedUrl) {
+  @VisibleForTesting public Scene(Long directorId, Timestamp created, String imageSignedUrl) {
     super(directorId, created);
     this.imageSignedUrl = imageSignedUrl;
   }
 
-  @Override public Entity toEntity() {
-    Entity entity = super.toEntity();
-    entity.setProperty(DATASTORE_IMAGE_SIGNED_URL, imageSignedUrl);
-    return entity;
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
+    if (imageSignedUrl != null) {
+      builder.set(DATASTORE_IMAGE_SIGNED_URL, imageSignedUrl);
+    }
+    return builder;
   }
 
-  @Override public void prepareSave(HttpServletRequest req,
-      StudioServlet servlet) throws Exception {
+  @Override void saveMedia(HttpServletRequest req, StudioServlet servlet) throws Exception {
     Part imagePart = req.getPart(IMAGE_PART);
     if (imagePart == null) throw new IOException("Missing scene image, are you being shy?");
     servlet.getStorageClient().save(getImagePath(),
         imagePart.getContentType(),
-        imagePart.getInputStream(),
+        ByteStreams.toByteArray(imagePart.getInputStream()),
         servlet.getBucketName());
     imageSignedUrl = servlet.getUrlSigner()
-        .sign(servlet.getPrivateKey(), servlet.getBucketName() + "/" + getImagePath());
+        .sign(servlet.getBucketName() + "/" + getImagePath());
   }
 
   @Override public boolean equals(Object o) {
@@ -90,7 +97,7 @@ public class Scene extends Reactable {
     return STORAGE_IMAGES_PATH
         + getDirectorId()
         + "/"
-        + getCreated().getTime()
+        + getCreated().getSeconds()
         + "."
         + DEFAULT_IMAGE_TYPE;
   }

@@ -1,45 +1,34 @@
 package com.truethat.backend.storage;
 
-import com.google.api.client.http.InputStreamContent;
-import com.google.api.services.storage.Storage;
-import com.google.api.services.storage.model.Bucket;
-import com.google.api.services.storage.model.StorageObject;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.BucketInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.GeneralSecurityException;
 
 /**
  * Proudly created by ohad on 28/06/2017.
  */
 public class DefaultStorageClient implements StorageClient {
-  private Storage client;
+  private Storage storage;
 
   public DefaultStorageClient() throws IOException, GeneralSecurityException {
-    client = StorageFactory.getService();
+    storage = StorageOptions.getDefaultInstance().getService();
   }
 
   @Override public void addBucket(String bucketName) throws IOException {
-    Bucket bucket = new Bucket();
-    bucket.setName(bucketName);
-    client.buckets().insert(System.getenv("__GCLOUD_PROJECT__"), bucket).execute();
+    storage.create(BucketInfo.newBuilder(bucketName).build());
   }
 
-  @Override public String save(String destinationName, String contentType, InputStream inputStream,
+  @Override public BlobInfo save(String destinationName, String contentType, byte[] bytes,
       String bucketName) throws IOException, GeneralSecurityException {
-    InputStreamContent contentStream = new InputStreamContent(contentType, inputStream);
-    // Setting the length improves upload performance
-    contentStream.setLength(inputStream.available());
-    StorageObject objectMetadata = new StorageObject()
-        // Set the destination object name
-        .setName(destinationName);
-
-    // Do the insert
-    Storage.Objects.Insert insertRequest =
-        client.objects().insert(bucketName, objectMetadata, contentStream);
-    return insertRequest.execute().getName();
+    return storage.create(
+        BlobInfo.newBuilder(bucketName, destinationName).setContentType(contentType).build(),
+        bytes);
   }
 
-  Storage getClient() {
-    return client;
+  Storage getStorage() {
+    return storage;
   }
 }

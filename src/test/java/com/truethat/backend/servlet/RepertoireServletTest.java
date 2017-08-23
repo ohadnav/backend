@@ -1,16 +1,17 @@
 package com.truethat.backend.servlet;
 
+import com.google.cloud.Timestamp;
 import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import org.junit.Test;
 
 import static com.truethat.backend.common.TestUtil.toBufferedReader;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
 /**
@@ -22,7 +23,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
 
   @Override public void setUp() throws Exception {
     super.setUp();
-    repertoireServlet = new RepertoireServlet();
+    repertoireServlet = new RepertoireServlet().setDatastore(datastore);
     saveUser(defaultUser);
     scene = new Scene(defaultUser.getId(), NOW, null);
   }
@@ -46,7 +47,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
         }.getType());
     assertEquals(1, respondedReactables.size());
     // Enriches scene.
-    ReactableEnricher.enrich(Collections.singletonList(scene), defaultUser);
+    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
     assertEquals(scene, respondedReactables.get(0));
   }
 
@@ -60,7 +61,8 @@ public class RepertoireServletTest extends BaseServletTestSuite {
   @Test public void fetchRepertoire_multipleReactables() throws Exception {
     // Save reactables
     for (int i = 0; i < RepertoireServlet.FETCH_LIMIT + 1; i++) {
-      saveScene(new Scene(defaultUser.getId(), new Date(NOW.getTime() + i), null));
+      saveScene(new Scene(defaultUser.getId(),
+          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), null));
     }
     prepareFetch();
     repertoireServlet.doPost(mockRequest, mockResponse);
@@ -70,10 +72,13 @@ public class RepertoireServletTest extends BaseServletTestSuite {
         }.getType());
     // Asserts no more than StudioServlet.FETCH_LIMIT are responded.
     assertEquals(RepertoireServlet.FETCH_LIMIT, respondedReactables.size());
+    long recentTimestamp = respondedReactables.get(0).getCreated().getSeconds();
     // Asserts the reactables are sorted by recency.
-    for (int i = RepertoireServlet.FETCH_LIMIT; i > 0; i--) {
-      assertEquals(NOW.getTime() + i,
-          respondedReactables.get(RepertoireServlet.FETCH_LIMIT - i).getCreated().getTime());
+    for (int i = 0; i < RepertoireServlet.FETCH_LIMIT; i++) {
+      Scene scene = (Scene) respondedReactables.get(i);
+      assertEquals(recentTimestamp - i, scene.getCreated().getSeconds());
+      // Should have image url
+      assertNotNull(scene.getImageSignedUrl());
     }
   }
 

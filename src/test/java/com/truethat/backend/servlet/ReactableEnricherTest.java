@@ -41,7 +41,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
 
   @Test public void enrichReactable_noReactables() throws Exception {
     // Checks that no exceptions are thrown.
-    ReactableEnricher.enrich(Collections.emptyList(), defaultUser);
+    enricher.enrichReactables(Collections.emptyList(), defaultUser);
   }
 
   @Test public void enrichReactable_reaction() throws Exception {
@@ -51,7 +51,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
-    ReactableEnricher.enrich(Collections.singletonList(scene), defaultUser);
+    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
     assertEquals(REACTION, scene.getUserReaction());
     assertTrue(Maps.difference(ImmutableMap.of(REACTION, 1L), scene.getReactionCounters()).areEqual());
   }
@@ -69,7 +69,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
-    ReactableEnricher.enrich(Collections.singletonList(scene), defaultUser);
+    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
     assertTrue(Maps.difference(ImmutableMap.of(HAPPY, 1L, SAD, 1L), scene.getReactionCounters()).areEqual());
   }
 
@@ -86,7 +86,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
-    ReactableEnricher.enrich(Collections.singletonList(scene), defaultUser);
+    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
     assertTrue(Maps.difference(ImmutableMap.of(HAPPY, 2L), scene.getReactionCounters()).areEqual());
   }
 
@@ -99,7 +99,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
-    ReactableEnricher.enrich(Collections.singletonList(scene), defaultUser);
+    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
     assertTrue(Maps.difference(ImmutableMap.of(REACTION, 1L), scene.getReactionCounters()).areEqual());
   }
 
@@ -110,7 +110,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
-    ReactableEnricher.enrich(Collections.singletonList(scene), defaultUser);
+    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
     assertTrue(scene.isViewed());
   }
 
@@ -121,7 +121,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
-    ReactableEnricher.enrich(Collections.singletonList(scene), director);
+    enricher.enrichReactables(Collections.singletonList(scene), director);
     assertTrue(scene.isViewed());
     assertEquals(null, scene.getUserReaction());
     assertTrue(scene.getReactionCounters().isEmpty());
@@ -129,7 +129,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
 
   @Test public void enrichReactable_user() throws Exception {
     // Enriches the scene
-    ReactableEnricher.enrich(Collections.singletonList(scene), defaultUser);
+    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
     // Should not have director id as a field.
     assertFalse(scene.hasDirectorId());
     // Director field should be assigned

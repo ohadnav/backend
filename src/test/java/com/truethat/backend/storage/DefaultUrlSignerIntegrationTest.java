@@ -1,6 +1,8 @@
 package com.truethat.backend.storage;
 
-import com.google.api.services.storage.model.StorageObject;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobInfo;
+import com.google.common.io.ByteStreams;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -16,7 +18,7 @@ import java.net.HttpURLConnection;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Proudly created by ohad on 30/05/2017.
@@ -24,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class DefaultUrlSignerIntegrationTest extends BaseStorageTestSuite {
   private static final String FILENAME = "richard.branson";
   private static final String CONTENT_TYPE = "text/plain";
-  private static final DefaultUrlSigner URL_SIGNER = new DefaultUrlSigner();
+  private DefaultUrlSigner urlSigner;
   private static String privateKey;
 
   @BeforeClass
@@ -35,6 +37,11 @@ public class DefaultUrlSignerIntegrationTest extends BaseStorageTestSuite {
     JsonObject credentials =
         new GsonBuilder().create().fromJson(credentialsString, JsonElement.class).getAsJsonObject();
     privateKey = credentials.get("private_key").getAsString();
+  }
+
+  @Override public void setUp() throws Exception {
+    super.setUp();
+    urlSigner = new DefaultUrlSigner(privateKey);
   }
 
   @Test
@@ -50,18 +57,17 @@ public class DefaultUrlSignerIntegrationTest extends BaseStorageTestSuite {
     writer.close();
     tempFile.deleteOnExit();
     // Uploads the file
-    final String uploaded = storageClient.save(
-        FILENAME, CONTENT_TYPE, new FileInputStream(tempFile), bucketName);
+    final BlobInfo uploaded = storage.save(
+        FILENAME, CONTENT_TYPE, ByteStreams.toByteArray(new FileInputStream(tempFile)), bucketName);
     // Asserts that file exists
-    final StorageObject found =
-        storageClient.getClient().objects().get(bucketName, uploaded).execute();
-    assertEquals(found.getName(), FILENAME);
+    Blob blob = bucket.get(uploaded.getName());
+    assertTrue(blob.exists());
     // Asserts the file cannot be accessed.
     TestUtil.assertUrl(
         DefaultUrlSigner.BASE_GOOGLE_CLOUD_STORAGE_URL + "/" + bucketName + "/" + FILENAME,
         HttpURLConnection.HTTP_FORBIDDEN, null);
     // Asserts the file can be accessed upon signing.
-    TestUtil.assertUrl(URL_SIGNER.sign(privateKey, bucketName + "/" + FILENAME),
+    TestUtil.assertUrl(urlSigner.sign(bucketName + "/" + FILENAME),
         HttpURLConnection.HTTP_OK, TestUtil.toInputStream(quote));
   }
 }

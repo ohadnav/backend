@@ -1,9 +1,11 @@
 package com.truethat.backend.model;
 
-import com.google.appengine.api.datastore.Entity;
+import com.google.cloud.Timestamp;
+import com.google.cloud.datastore.Entity;
+import com.google.cloud.datastore.FullEntity;
+import com.google.cloud.datastore.IncompleteKey;
+import com.google.cloud.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
-import com.truethat.backend.common.Util;
-import java.util.Date;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
@@ -12,7 +14,7 @@ import javax.annotation.Nullable;
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/User.java</a>
  */
-@SuppressWarnings("unused") public class User {
+@SuppressWarnings("unused") public class User extends BaseModel {
   /**
    * Datastore kind.
    */
@@ -27,7 +29,7 @@ import javax.annotation.Nullable;
   /**
    * Time of account creation.
    */
-  private Date joined;
+  private Timestamp joined;
   /**
    * Psuedo-unique ID of user's device
    */
@@ -40,75 +42,56 @@ import javax.annotation.Nullable;
    * How his commander calls him.
    */
   private String lastName;
-  /**
-   * Client ID, that matches datastore key.
-   */
-  @SuppressWarnings({"unused", "FieldCanBeLocal"}) private Long id;
 
   public User(Entity entity) {
-    if (entity.getProperty(DATASTORE_FIRST_NAME) != null) {
-      firstName = (String) entity.getProperty(DATASTORE_FIRST_NAME);
+    super(entity);
+    if (entity.contains(DATASTORE_FIRST_NAME)) {
+      firstName = entity.getString(DATASTORE_FIRST_NAME);
     }
-    if (entity.getProperty(DATASTORE_LAST_NAME) != null) {
-      lastName = (String) entity.getProperty(DATASTORE_LAST_NAME);
+    if (entity.contains(DATASTORE_LAST_NAME)) {
+      lastName = entity.getString(DATASTORE_LAST_NAME);
     }
-    if (entity.getProperty(DATASTORE_DEVICE_ID) != null) {
-      deviceId = (String) entity.getProperty(DATASTORE_DEVICE_ID);
+    if (entity.contains(DATASTORE_DEVICE_ID)) {
+      deviceId = entity.getString(DATASTORE_DEVICE_ID);
     }
-    if (entity.getProperty(DATASTORE_JOINED) != null) {
-      joined = (Date) entity.getProperty(DATASTORE_JOINED);
+    if (entity.contains(DATASTORE_JOINED)) {
+      joined = entity.getTimestamp(DATASTORE_JOINED);
     }
-    id = entity.getKey().getId();
+
   }
 
   @VisibleForTesting public User(@Nullable String deviceId,
-      @Nullable String firstName, @Nullable String lastName, Date joined) {
+      @Nullable String firstName, @Nullable String lastName, Timestamp joined) {
     this.deviceId = deviceId;
     this.firstName = firstName;
     this.lastName = lastName;
     this.joined = joined;
   }
 
-  @VisibleForTesting public User(long id) {
-    this.id = id;
-  }
-
-  public Entity toEntity() {
-    Entity entity = new Entity(User.DATASTORE_KIND);
-    // Current date is set, as mobile frontend does not use that field.
-    entity.setProperty(DATASTORE_JOINED, new Date());
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
     if (deviceId != null) {
-      entity.setProperty(DATASTORE_DEVICE_ID, deviceId);
+      builder.set(DATASTORE_DEVICE_ID, deviceId);
     }
     if (firstName != null) {
-      entity.setProperty(DATASTORE_FIRST_NAME, firstName);
+      builder.set(DATASTORE_FIRST_NAME, firstName);
     }
     if (lastName != null) {
-      entity.setProperty(DATASTORE_LAST_NAME, lastName);
+      builder.set(DATASTORE_LAST_NAME, lastName);
     }
-    return entity;
-  }
-
-  public boolean hasId() {
-    return id != null;
-  }
-  public long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
+    builder.set(DATASTORE_JOINED, joined != null ? joined : Timestamp.now());
+    return builder;
   }
 
   public String getDeviceId() {
     return deviceId;
   }
 
-  public Date getJoined() {
+  public Timestamp getJoined() {
     return joined;
   }
 
-  public void setJoined(Date joined) {
+  public void setJoined(Timestamp joined) {
     this.joined = joined;
   }
 
@@ -139,7 +122,10 @@ import javax.annotation.Nullable;
     return Objects.equals(id, user.id);
   }
 
-  @Override public String toString() {
-    return Util.GSON.toJson(this);
+  /**
+   * Prepares this instance for enrichment, so that private data is not exposed.
+   */
+  public void deletePrivateData() {
+    deviceId = null;
   }
 }

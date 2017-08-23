@@ -1,8 +1,8 @@
 package com.truethat.backend.servlet;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
+import com.google.cloud.datastore.Datastore;
+import com.google.cloud.datastore.DatastoreOptions;
+import com.google.cloud.datastore.KeyFactory;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.InteractionEvent;
 import java.io.IOException;
@@ -19,8 +19,15 @@ import javax.servlet.http.HttpServletResponse;
  */
 @WebServlet(value = "/interaction", name = "InteractionEvent")
 public class InteractionServlet extends HttpServlet {
-  private static final DatastoreService DATASTORE_SERVICE =
-      DatastoreServiceFactory.getDatastoreService();
+  private Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
+  private KeyFactory eventKeyFactory =
+      datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
+
+  public InteractionServlet setDatastore(Datastore datastore) {
+    this.datastore = datastore;
+    eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
+    return this;
+  }
 
   /**
    * Saves events to Datastore, and response the saved {@link InteractionEvent}.
@@ -33,9 +40,10 @@ public class InteractionServlet extends HttpServlet {
     if (!interactionEvent.isValid()) {
       throw new IOException("Invalid interaction event: " + Util.GSON.toJson(interactionEvent));
     }
-    Entity toPut = interactionEvent.toEntity();
-    DATASTORE_SERVICE.put(toPut);
-    interactionEvent.setId(toPut.getKey().getId());
-    resp.getWriter().print(Util.GSON.toJson(interactionEvent));
+    // Puts the event in the datastore and responds it to the client.
+    resp.getWriter()
+        .print(Util.GSON.toJson(
+            new InteractionEvent(
+                datastore.add(interactionEvent.toEntityBuilder(eventKeyFactory).build()))));
   }
 }

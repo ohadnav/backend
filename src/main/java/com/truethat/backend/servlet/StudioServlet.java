@@ -1,7 +1,8 @@
 package com.truethat.backend.servlet;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.cloud.datastore.Datastore;
+import com.google.cloud.datastore.DatastoreOptions;
+import com.google.cloud.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -39,12 +40,12 @@ public class StudioServlet extends HttpServlet {
   @VisibleForTesting
   static final String CREDENTIALS_PATH = "credentials/";
   private static final Logger LOG = Logger.getLogger(StudioServlet.class.getName());
-  private static final DatastoreService DATASTORE_SERVICE =
-      DatastoreServiceFactory.getDatastoreService();
+  private Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
+  private KeyFactory reactableKeyFactory =
+      datastore.newKeyFactory().setKind(Reactable.DATASTORE_KIND);
   private StorageClient storageClient;
-  private UrlSigner urlSigner = new DefaultUrlSigner();
+  private UrlSigner urlSigner;
   private String bucketName = System.getenv("STUDIO_BUCKET");
-  private String privateKey;
 
   public String getBucketName() {
     return bucketName;
@@ -55,20 +56,18 @@ public class StudioServlet extends HttpServlet {
     this.bucketName = bucketName;
   }
 
-  public String getPrivateKey() {
-    return privateKey;
-  }
-
-  public DatastoreService getDatastoreService() {
-    return DATASTORE_SERVICE;
+  public Datastore getDatastore() {
+    return datastore;
   }
 
   public StorageClient getStorageClient() {
     return storageClient;
   }
 
-  @VisibleForTesting void setStorageClient(StorageClient storageClient) {
-    this.storageClient = storageClient;
+  public StudioServlet setDatastore(Datastore datastore) {
+    this.datastore = datastore;
+    reactableKeyFactory = datastore.newKeyFactory().setKind(Reactable.DATASTORE_KIND);
+    return this;
   }
 
   public UrlSigner getUrlSigner() {
@@ -77,6 +76,10 @@ public class StudioServlet extends HttpServlet {
 
   void setUrlSigner(UrlSigner urlSigner) {
     this.urlSigner = urlSigner;
+  }
+
+  public KeyFactory getReactableKeyFactory() {
+    return reactableKeyFactory;
   }
 
   @Override
@@ -91,11 +94,10 @@ public class StudioServlet extends HttpServlet {
           new GsonBuilder().create()
               .fromJson(credentialsString, JsonElement.class)
               .getAsJsonObject();
-      privateKey = credentials.get("private_key").getAsString();
-    } catch (IOException e) {
-      LOG.severe("Could not get private key: " + e.getMessage());
+      urlSigner = new DefaultUrlSigner(credentials.get("private_key").getAsString());
+    } catch (Exception e) {
       e.printStackTrace();
-      throw new ServletException("Could not get private key: " + e.getMessage());
+      throw new ServletException("Could not initialize URL signer: " + e.getMessage());
     }
     // Initializes storage client
     try {
@@ -105,6 +107,10 @@ public class StudioServlet extends HttpServlet {
       LOG.severe("Could not initialize storage client: " + e.getMessage());
       throw new ServletException("Could not initialize storage client: " + e.getMessage());
     }
+  }
+
+  void setStorageClient(StorageClient storageClient) {
+    this.storageClient = storageClient;
   }
 
   /**

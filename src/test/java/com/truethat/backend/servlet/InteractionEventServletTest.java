@@ -1,15 +1,14 @@
 package com.truethat.backend.servlet;
 
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Query;
 import com.truethat.backend.model.Emotion;
 import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.InteractionEvent;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
+import java.io.IOException;
 import org.junit.Test;
 
-import static com.truethat.backend.common.TestUtil.assertEqualsForEntityAndInteraction;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Proudly created by ohad on 03/07/2017.
@@ -35,9 +34,8 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
     // Saves the event.
     saveInteraction(interactionEvent);
     // Retrieves the saves event from datastore.
-    Entity savedEntity =
-        datastoreService.prepare(new Query(InteractionEvent.DATASTORE_KIND)).asSingleEntity();
-    assertEqualsForEntityAndInteraction(savedEntity, interactionEvent);
+    assertEquals(interactionEvent,
+        new InteractionEvent(datastore.get(eventKeyFactory.newKey(interactionEvent.getId()))));
   }
 
   @Test
@@ -49,8 +47,27 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
     // Saves the event.
     saveInteraction(interactionEvent);
     // Retrieves the saves event from datastore.
-    Entity savedEntity =
-        datastoreService.prepare(new Query(InteractionEvent.DATASTORE_KIND)).asSingleEntity();
-    assertEqualsForEntityAndInteraction(savedEntity, interactionEvent);
+    assertEquals(interactionEvent,
+        new InteractionEvent(datastore.get(eventKeyFactory.newKey(interactionEvent.getId()))));
+  }
+
+  @Test(expected = IOException.class)
+  public void invalidEvent_viewWithReaction() throws Exception {
+    saveScene(scene);
+    InteractionEvent interactionEvent =
+        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_VIEW,
+            Emotion.HAPPY);
+    // Saves the event.
+    saveInteraction(interactionEvent);
+  }
+
+  @Test(expected = IOException.class)
+  public void invalidEvent_reactionWitouthReaction() throws Exception {
+    saveScene(scene);
+    InteractionEvent interactionEvent =
+        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+            null);
+    // Saves the event.
+    saveInteraction(interactionEvent);
   }
 }

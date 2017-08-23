@@ -1,6 +1,8 @@
 package com.truethat.backend.storage;
 
-import com.google.api.services.storage.model.StorageObject;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobInfo;
+import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.FileInputStream;
 import org.junit.Test;
@@ -20,13 +22,12 @@ public class DefaultStorageClientIntegrationTest extends BaseStorageTestSuite {
     File tempFile = File.createTempFile(FILENAME.split("\\.")[0], "txt");
     tempFile.deleteOnExit();
     // Uploads the file
-    String uploaded = storageClient.save(
-        FILENAME, CONTENT_TYPE, new FileInputStream(tempFile), bucketName);
+    BlobInfo uploaded = storage.save(
+        FILENAME, CONTENT_TYPE, ByteStreams.toByteArray(new FileInputStream(tempFile)), bucketName);
     // Asserts that file exists
-    final StorageObject found = storageClient.getClient().objects().get(bucketName, uploaded).execute();
-    assertEquals(found.getName(), FILENAME);
-    assertEquals(CONTENT_TYPE, found.getContentType());
-    assertEquals(FILENAME, found.getName());
-    assertEquals(bucketName, found.getBucket());
+    Blob blob = bucket.get(uploaded.getName());
+    assertEquals(FILENAME, blob.getName());
+    assertEquals(CONTENT_TYPE, blob.getContentType());
+    assertEquals(bucketName, blob.getBucket());
   }
 }

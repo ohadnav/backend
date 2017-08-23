@@ -7,7 +7,8 @@ import javax.annotation.Nonnull;
  */
 public class LocalUrlSigner implements UrlSigner {
   private static final String SIGNATURE = "?signed";
-  @Override public String sign(@Nonnull String privateKey, @Nonnull String objectPath)
+
+  @Override public String sign(@Nonnull String objectPath)
       throws Exception {
     return objectPath + SIGNATURE;
   }

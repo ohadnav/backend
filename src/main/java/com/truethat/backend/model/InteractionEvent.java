@@ -1,8 +1,11 @@
 package com.truethat.backend.model;
 
-import com.google.appengine.api.datastore.Entity;
+import com.google.cloud.Timestamp;
+import com.google.cloud.datastore.Entity;
+import com.google.cloud.datastore.FullEntity;
+import com.google.cloud.datastore.IncompleteKey;
+import com.google.cloud.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Date;
 import javax.annotation.Nullable;
 
 /**
@@ -10,7 +13,7 @@ import javax.annotation.Nullable;
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/InteractionEvent.java</a>
  */
-@SuppressWarnings("FieldCanBeLocal") public class InteractionEvent {
+@SuppressWarnings("FieldCanBeLocal") public class InteractionEvent extends BaseModel {
   /**
    * Datastore kind.
    */
@@ -18,26 +21,21 @@ import javax.annotation.Nullable;
   /**
    * Datastore column names.
    */
-  public static final String DATASTORE_TIMESTAMP = "timestamp";
-  public static final String DATASTORE_USER_ID = "userId";
+  private static final String DATASTORE_TIMESTAMP = "timestamp";
+  private static final String DATASTORE_USER_ID = "userId";
   public static final String DATASTORE_REACTABLE_ID = "reactableId";
-  public static final String DATASTORE_EVENT_TYPE = "eventType";
-  public static final String DATASTORE_REACTION = "reaction";
-
-  /**
-   * InteractionEvent ID, as defined by its datastore key.
-   */
-  @SuppressWarnings("unused") private Long id;
+  private static final String DATASTORE_EVENT_TYPE = "eventType";
+  private static final String DATASTORE_REACTION = "reaction";
 
   /**
    * Client UTC timestamp
    */
-  private Date timestamp;
+  private Timestamp timestamp;
 
   /**
    * ID of the user that triggered the event.
    */
-  private long userId;
+  private Long userId;
 
   /**
    * For {@link EventType#REACTABLE_REACTION}.
@@ -54,28 +52,28 @@ import javax.annotation.Nullable;
   /**
    * Of the {@link Reactable} that was interacted with.
    */
-  private long reactableId;
+  private Long reactableId;
 
   public InteractionEvent(Entity entity) {
-    if (entity.getProperty(DATASTORE_USER_ID) != null) {
-      userId = (Long) entity.getProperty(DATASTORE_USER_ID);
+    super(entity);
+    if (entity.contains(DATASTORE_USER_ID)) {
+      userId = entity.getLong(DATASTORE_USER_ID);
     }
-    if (entity.getProperty(DATASTORE_EVENT_TYPE) != null) {
-      eventType = EventType.fromCode(((Long) entity.getProperty(DATASTORE_EVENT_TYPE)).intValue());
+    if (entity.contains(DATASTORE_EVENT_TYPE)) {
+      eventType = EventType.fromCode((int) entity.getLong(DATASTORE_EVENT_TYPE));
     }
-    if (entity.getProperty(DATASTORE_REACTION) != null) {
-      reaction = Emotion.fromCode(((Long) entity.getProperty(DATASTORE_REACTION)).intValue());
+    if (entity.contains(DATASTORE_REACTION)) {
+      reaction = Emotion.fromCode((int) entity.getLong(DATASTORE_REACTION));
     }
-    if (entity.getProperty(DATASTORE_REACTABLE_ID) != null) {
-      reactableId = (Long) entity.getProperty(DATASTORE_REACTABLE_ID);
+    if (entity.contains(DATASTORE_REACTABLE_ID)) {
+      reactableId = entity.getLong(DATASTORE_REACTABLE_ID);
     }
-    if (entity.getProperty(DATASTORE_TIMESTAMP) != null) {
-      timestamp = (Date) entity.getProperty(DATASTORE_TIMESTAMP);
+    if (entity.contains(DATASTORE_TIMESTAMP)) {
+      timestamp = entity.getTimestamp(DATASTORE_TIMESTAMP);
     }
-    id = entity.getKey().getId();
   }
   @VisibleForTesting
-  public InteractionEvent(long userId, long reactableId, Date timestamp, EventType eventType,
+  public InteractionEvent(long userId, long reactableId, Timestamp timestamp, EventType eventType,
       @Nullable
       Emotion reaction) {
     this.timestamp = timestamp;
@@ -96,26 +94,50 @@ import javax.annotation.Nullable;
     return false;
   }
 
-  public Entity toEntity() {
-    Entity entity = new Entity(InteractionEvent.DATASTORE_KIND);
-    entity.setProperty(InteractionEvent.DATASTORE_REACTABLE_ID, reactableId);
-    entity.setProperty(InteractionEvent.DATASTORE_TIMESTAMP, timestamp);
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
+    if (reactableId != null) {
+      builder.set(InteractionEvent.DATASTORE_REACTABLE_ID, reactableId);
+    }
+    if (timestamp != null) {
+      builder.set(InteractionEvent.DATASTORE_TIMESTAMP, timestamp);
+    }
     if (eventType != null) {
-      entity.setProperty(InteractionEvent.DATASTORE_EVENT_TYPE, eventType.getCode());
+      builder.set(InteractionEvent.DATASTORE_EVENT_TYPE, eventType.getCode());
     }
-    entity.setProperty(InteractionEvent.DATASTORE_USER_ID, userId);
+    if (userId != null) {
+      builder.set(InteractionEvent.DATASTORE_USER_ID, userId);
+    }
     if (reaction != null) {
-      entity.setProperty(InteractionEvent.DATASTORE_REACTION, reaction.getCode());
+      builder.set(InteractionEvent.DATASTORE_REACTION, reaction.getCode());
     }
-    return entity;
+    return builder;
   }
 
-  public Date getTimestamp() {
-    return timestamp;
+  @Override public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (timestamp != null ? timestamp.hashCode() : 0);
+    result = 31 * result + (userId != null ? userId.hashCode() : 0);
+    result = 31 * result + (reaction != null ? reaction.hashCode() : 0);
+    result = 31 * result + (eventType != null ? eventType.hashCode() : 0);
+    result = 31 * result + (reactableId != null ? reactableId.hashCode() : 0);
+    return result;
   }
 
-  public void setTimestamp(Date timestamp) {
-    this.timestamp = timestamp;
+  @SuppressWarnings("SimplifiableIfStatement") @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof InteractionEvent)) return false;
+    if (!super.equals(o)) return false;
+
+    InteractionEvent that = (InteractionEvent) o;
+
+    if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) {
+      return false;
+    }
+    if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
+    if (reaction != that.reaction) return false;
+    if (eventType != that.eventType) return false;
+    return reactableId != null ? reactableId.equals(that.reactableId) : that.reactableId == null;
   }
 
   public long getUserId() {
@@ -130,15 +152,11 @@ import javax.annotation.Nullable;
     return eventType;
   }
 
-  public long getReactableId() {
-    return reactableId;
+  public Timestamp getTimestamp() {
+    return timestamp;
   }
 
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
+  public void setTimestamp(Timestamp timestamp) {
+    this.timestamp = timestamp;
   }
 }

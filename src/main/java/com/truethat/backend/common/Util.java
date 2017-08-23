@@ -1,6 +1,6 @@
 package com.truethat.backend.common;
 
-import com.google.appengine.api.datastore.Query;
+import com.google.cloud.Timestamp;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Proudly created by ohad on 01/06/2017.
@@ -21,7 +20,7 @@ import java.util.List;
 public class Util {
   public static final Gson GSON =
       new GsonBuilder()
-          .registerTypeAdapter(Date.class, new GsonUTCDateAdapter())
+          .registerTypeAdapter(Timestamp.class, new GsonUTCDateAdapter())
           .registerTypeAdapterFactory(
               RuntimeTypeAdapterFactory.of(Reactable.class).registerSubtype(Scene.class))
           .create();
@@ -30,12 +29,7 @@ public class Util {
     return CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
   }
 
-  public static void setFilter(Query query, List<Query.Filter> filters,
-      Query.CompositeFilterOperator filterOperator) {
-    if (filters.size() == 1) {
-      query.setFilter(filters.get(0));
-    } else if (filters.size() > 1) {
-      query.setFilter(filterOperator.of(filters));
-    }
+  public static Date timestampToDate(Timestamp timestamp) {
+    return new Date(timestamp.getSeconds() * 1000 + timestamp.getNanos() / 1000000);
   }
 }

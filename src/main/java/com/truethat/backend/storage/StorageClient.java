@@ -1,7 +1,7 @@
 package com.truethat.backend.storage;
 
+import com.google.cloud.storage.BlobInfo;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.GeneralSecurityException;
 
 /**
@@ -15,10 +15,11 @@ public interface StorageClient {
    *
    * @param destinationName the name of the destination object.
    * @param contentType     the MIME type of the data.
-   * @param inputStream     the file to upload.
+   * @param bytes     the file to upload.
    * @param bucketName      the name of the bucket to create the object in.
-   * @return the URL of the new object.
+   * @return the saved object
    */
-  String save(String destinationName, String contentType, InputStream inputStream, String bucketName) throws IOException,
+  BlobInfo save(String destinationName, String contentType, byte[] bytes, String bucketName)
+      throws IOException,
       GeneralSecurityException;
 }

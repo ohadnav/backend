@@ -1,15 +1,17 @@
 package com.truethat.backend.servlet;
 
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.FetchOptions;
-import com.google.appengine.api.datastore.Query;
+import com.google.cloud.datastore.Entity;
+import com.google.cloud.datastore.Query;
+import com.google.common.collect.Lists;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.User;
 import java.util.List;
 import org.junit.Test;
 
 import static com.truethat.backend.common.TestUtil.toBufferedReader;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -22,10 +24,11 @@ public class AuthServletTest extends BaseServletTestSuite {
   public void createUser() throws Exception {
     saveUser(defaultUser);
     // Retrieves the saved user from datastore.
-    Entity userEntity = datastoreService.prepare(new Query(User.DATASTORE_KIND)).asSingleEntity();
+    Entity userEntity = datastore.get(userKeyFactory.newKey(defaultUser.getId()));
     // Assert the saved user matches the provided one, and has a join date.
-    assertUserAndEntityAreEquals(defaultUser, userEntity);
-    assertNotNull(userEntity.getProperty(User.DATASTORE_JOINED));
+    assertNotNull(userEntity);
+    assertEquals(defaultUser, new User(userEntity));
+    assertTrue(userEntity.contains(User.DATASTORE_JOINED));
     // Assert the response contains a user ID, and matches the provided one.
     String response = responseWriter.toString();
     User respondedUser = Util.GSON.fromJson(response, User.class);
@@ -38,10 +41,13 @@ public class AuthServletTest extends BaseServletTestSuite {
     defaultUser.setId(null);
     saveUser(defaultUser);
     // Retrieves the saved user from datastore.
-    List<Entity> savedEntities = datastoreService.prepare(new Query(User.DATASTORE_KIND)).asList(
-        FetchOptions.Builder.withDefaults());
-    // Assert no new entity was saved.
-    assertEquals(1, savedEntities.size());
+    List<User> savedUsers = Lists.newArrayList(
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        .stream()
+        .map(User::new)
+        .collect(toList());
+    // Assert only a single entity was saved.
+    assertEquals(1, savedUsers.size());
     // Assert the response contains a user ID, and matches the provided one.
     String response = responseWriter.toString();
     User respondedUser = Util.GSON.fromJson(response, User.class);
@@ -53,21 +59,29 @@ public class AuthServletTest extends BaseServletTestSuite {
     User user = new User(DEVICE_ID, "old", "old", NOW);
     saveUser(user);
     // Retrieves the saved user from datastore.
-    Entity userEntity = datastoreService.prepare(new Query(User.DATASTORE_KIND)).asSingleEntity();
+    User savedUser = Lists.newArrayList(
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        .stream()
+        .map(User::new)
+        .collect(toList())
+        .get(0);
     // Assert the saved user has old data.
-    assertUserAndEntityAreEquals(user, userEntity);
+    assertEquals(user, savedUser);
     // Saves the first ID
     User firstUser = Util.GSON.fromJson(responseWriter.toString(), User.class);
     assertTrue(firstUser.hasId());
     user = new User(DEVICE_ID, FIRST_NAME, LAST_NAME, NOW);
     saveUser(user);
     // Retrieves the all saved users.
-    List<Entity> savedEntities = datastoreService.prepare(new Query(User.DATASTORE_KIND))
-        .asList(FetchOptions.Builder.withDefaults());
+    List<User> savedUsers = Lists.newArrayList(
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        .stream()
+        .map(User::new)
+        .collect(toList());
     // Assert only one user was saved.
-    assertEquals(1, savedEntities.size());
+    assertEquals(1, savedUsers.size());
     // Assert the saved user matches the updated one.
-    assertUserAndEntityAreEquals(user, savedEntities.get(0));
+    assertEquals(user, savedUsers.get(0));
     // Assert the saved user has the same ID.
     assertEquals(firstUser.getId(),
         Util.GSON.fromJson(responseWriter.toString(), User.class).getId());
@@ -84,9 +98,12 @@ public class AuthServletTest extends BaseServletTestSuite {
     User response = Util.GSON.fromJson(responseWriter.toString(), User.class);
     assertEquals(defaultUser, response);
     // Should not save additional entity
-    List<Entity> savedEntities = datastoreService.prepare(new Query(User.DATASTORE_KIND))
-        .asList(FetchOptions.Builder.withDefaults());
-    assertEquals(1, savedEntities.size());
+    List<User> savedUsers = Lists.newArrayList(
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        .stream()
+        .map(User::new)
+        .collect(toList());
+    assertEquals(1, savedUsers.size());
   }
 
   @Test
@@ -100,9 +117,8 @@ public class AuthServletTest extends BaseServletTestSuite {
     // We cant test for status code :-(
     assertTrue(responseWriter.toString().isEmpty());
     // Should not save any users
-    List<Entity> savedEntities = datastoreService.prepare(new Query(User.DATASTORE_KIND))
-        .asList(FetchOptions.Builder.withDefaults());
-    assertTrue(savedEntities.isEmpty());
+    assertFalse(datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build())
+        .hasNext());
   }
 
   @Test
@@ -114,17 +130,14 @@ public class AuthServletTest extends BaseServletTestSuite {
     // Auth again with the same user.
     authServlet.doPost(mockRequest, mockResponse);
     // Should update data
-    List<Entity> savedEntities = datastoreService.prepare(new Query(User.DATASTORE_KIND))
-        .asList(FetchOptions.Builder.withDefaults());
+    List<User> savedUsers = Lists.newArrayList(
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        .stream()
+        .map(User::new)
+        .collect(toList());
     // Assert only one user was saved.
-    assertEquals(1, savedEntities.size());
+    assertEquals(1, savedUsers.size());
     // Assert the saved user matches the updated one.
-    assertUserAndEntityAreEquals(defaultUser, savedEntities.get(0));
-  }
-
-  private void assertUserAndEntityAreEquals(User user, Entity entity) {
-    assertEquals(user.getDeviceId(), entity.getProperty(User.DATASTORE_DEVICE_ID));
-    assertEquals(user.getFirstName(), entity.getProperty(User.DATASTORE_FIRST_NAME));
-    assertEquals(user.getLastName(), entity.getProperty(User.DATASTORE_LAST_NAME));
+    assertEquals(defaultUser, savedUsers.get(0));
   }
 }

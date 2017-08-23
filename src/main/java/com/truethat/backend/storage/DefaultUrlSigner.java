@@ -26,6 +26,13 @@ public class DefaultUrlSigner implements UrlSigner {
   // Default expiration is set to 24 hours
   private static final long EXPIRATION_MILLIS = TimeUnit.DAYS.toMillis(1);
 
+  private PrivateKey privateKey;
+
+  public DefaultUrlSigner(String privateKey)
+      throws NoSuchAlgorithmException, InvalidKeySpecException {
+    this.privateKey = getPrivateKey(privateKey);
+  }
+
   /**
    * Prepares the signing request.
    *
@@ -42,43 +49,10 @@ public class DefaultUrlSigner implements UrlSigner {
   }
 
   /**
-   * Use SHA256withRSA to sign the request
-   *
-   * @param signRequest signing request as required by Google.
-   * @param privateKey  to prepare the actual signature.
-   * @return the signed request string.
-   */
-  private static String getSignedString(String signRequest, PrivateKey privateKey)
-      throws NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException,
-      SignatureException {
-    Signature privateSignature = Signature.getInstance("SHA256withRSA");
-    privateSignature.initSign(privateKey);
-    privateSignature.update(signRequest.getBytes("UTF-8"));
-    byte[] signed = privateSignature.sign();
-    return Base64.getEncoder().encodeToString(signed);
-  }
-
-  /**
-   * @param privateKey as found in the credentials json resource.
-   * @return private key object from unencrypted PKCS#8 file content.
-   */
-  private static PrivateKey getPrivateKey(String privateKey)
-      throws NoSuchAlgorithmException, InvalidKeySpecException {
-    // Remove extra characters in private key.
-    String realPrivateKey = privateKey.replaceAll("-----END PRIVATE KEY-----", "")
-        .replaceAll("-----BEGIN PRIVATE KEY-----", "")
-        .replaceAll("\n", "");
-    byte[] decoded = Base64.getDecoder().decode(realPrivateKey);
-    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decoded);
-    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-    return keyFactory.generatePrivate(spec);
-  }
-
-  /**
    * Builds the signed URL format as required by Google.
    *
    * @param fullObjectPath       full (unauthorized) URL to the object.
-   * @param signature            as provided by {@link #getSignedString(String, PrivateKey)}
+   * @param signature            as provided by {@link #getSignedString(String)}
    * @param expiredTimeInSeconds the signature expiration time in UTC seconds.
    * @return the signed URL, which can be used by the end user.
    */
@@ -93,11 +67,10 @@ public class DefaultUrlSigner implements UrlSigner {
   /**
    * Builds the signed URL format as required by Google.
    *
-   * @param privateKey as provided by Google - https://goo.gl/yuBXp8
    * @param objectPath relative URL to BASE_GOOGLE_CLOUD_STORAGE_URL.
    * @return the signed URL, which can be used by the end user.
    */
-  public String sign(@Nonnull String privateKey, @Nonnull String objectPath)
+  public String sign(@Nonnull String objectPath)
       throws Exception {
     // Prefixes "/" to objectPath if needed.
     objectPath = objectPath.startsWith("/") ? objectPath : "/" + objectPath;
@@ -106,11 +79,45 @@ public class DefaultUrlSigner implements UrlSigner {
     long expiryTimeInSeconds = (System.currentTimeMillis() + EXPIRATION_MILLIS) / 1000;
     String fullObjectPath = BASE_GOOGLE_CLOUD_STORAGE_URL + objectPath;
     String signRequest = getSignRequest(objectPath, expiryTimeInSeconds);
-    String signature = getSignedString(signRequest, getPrivateKey(privateKey));
+    String signature = getSignedString(signRequest);
 
     // URL encode the signed string so that we can add this URL
     signature = URLEncoder.encode(signature, "UTF-8");
 
     return buildUrl(fullObjectPath, signature, expiryTimeInSeconds);
+  }
+
+  /**
+   * Use SHA256withRSA to sign the request
+   *
+   * @param signRequest signing request as required by Google.
+   *
+   * @return the signed request string.
+   */
+  private String getSignedString(String signRequest)
+      throws NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException,
+      SignatureException {
+    Signature privateSignature = Signature.getInstance("SHA256withRSA");
+    privateSignature.initSign(privateKey);
+    privateSignature.update(signRequest.getBytes("UTF-8"));
+    byte[] signed = privateSignature.sign();
+    return Base64.getEncoder().encodeToString(signed);
+  }
+
+  /**
+   * @param privateKey as found in the credentials json resource.
+   *
+   * @return private key object from unencrypted PKCS#8 file content.
+   */
+  private PrivateKey getPrivateKey(String privateKey)
+      throws NoSuchAlgorithmException, InvalidKeySpecException {
+    // Remove extra characters in private key.
+    String realPrivateKey = privateKey.replaceAll("-----END PRIVATE KEY-----", "")
+        .replaceAll("-----BEGIN PRIVATE KEY-----", "")
+        .replaceAll("\n", "");
+    byte[] decoded = Base64.getDecoder().decode(realPrivateKey);
+    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(decoded);
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    return keyFactory.generatePrivate(spec);
   }
 }
