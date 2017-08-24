@@ -1,15 +1,12 @@
 package com.truethat.backend.servlet;
 
 import com.google.cloud.datastore.Query;
-import com.google.common.collect.Lists;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
 import javax.servlet.ServletException;
 import org.junit.Test;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 
 /**
@@ -24,21 +21,15 @@ public class StudioServletTest extends BaseServletTestSuite {
     scene = new Scene(defaultUser, NOW, null);
   }
 
-  @Test(expected = ServletException.class)
+  @Test
   public void sceneSaved() throws Exception {
-    prepareSceneSave(scene);
-    // Executes the POST request.
-    studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts that the reactable was saved into the Datastore.
-    Scene savedScene = (Scene) Lists.newArrayList(datastore.run(
-        Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND).build()))
-        .stream()
-        .map(Reactable::fromEntity)
-        .collect(toList())
-        .get(0);
-    // Asserts that the scene's image is saved, and matches the uploaded one.
+    saveScene(scene);
+    Scene savedScene = (Scene) Reactable.fromEntity(
+        datastore.run(Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND).build())
+            .next());
+    scene.setDirector(null);
+    scene.setDirectorId(defaultUser.getId());
     assertEquals(scene, savedScene);
-    assertNotNull(savedScene.getImageSignedUrl());
   }
 
   @Test(expected = ServletException.class)

@@ -140,8 +140,8 @@ import javax.servlet.http.HttpServletRequest;
     return director == null ? directorId : director.getId();
   }
 
-  @VisibleForTesting public boolean hasDirectorId() {
-    return directorId != null;
+  public void setDirectorId(Long directorId) {
+    this.directorId = directorId;
   }
 
   public Timestamp getCreated() {

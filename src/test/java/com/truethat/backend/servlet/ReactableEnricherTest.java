@@ -13,7 +13,6 @@ import org.junit.Test;
 import static com.truethat.backend.model.Emotion.HAPPY;
 import static com.truethat.backend.model.Emotion.SAD;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -130,8 +129,6 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
   @Test public void enrichReactable_user() throws Exception {
     // Enriches the scene
     enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
-    // Should not have director id as a field.
-    assertFalse(scene.hasDirectorId());
     // Director field should be assigned
     assertEquals(director.getId(), scene.getDirectorId());
     assertEquals(director.getFirstName(), scene.getDirector().getFirstName());

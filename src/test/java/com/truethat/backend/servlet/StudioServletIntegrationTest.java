@@ -30,7 +30,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.threeten.bp.Duration;
 
+import static com.truethat.backend.common.TestUtil.toBufferedReader;
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 /**
@@ -38,10 +40,7 @@ import static org.mockito.Mockito.when;
  */
 public class StudioServletIntegrationTest extends BaseStorageTestSuite {
   private static final LocalDatastoreHelper HELPER = LocalDatastoreHelper.create(1.0);
-  private static final Timestamp NOW = Timestamp.now();
-  private static final String CONTENT_TYPE = "image/jpeg";
-  private static final Scene SCENE =
-      new Scene(new User("my-android", "frudo", "baggins", NOW), NOW, null);
+
   @Mock
   private ServletConfig mockServletConfig;
   @Mock
@@ -54,7 +53,9 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
   private Part mockImagePart;
   @Mock
   private Part mockReactablePart;
+  private StringWriter responseWriter;
   private StudioServlet studioServlet;
+  private AuthServlet authServlet;
   private Datastore datastore;
 
   @BeforeClass
@@ -76,7 +77,9 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     datastore = HELPER.getOptions().getService();
     // Initialize servlet
     studioServlet = new StudioServlet();
+    authServlet = new AuthServlet();
     studioServlet.setDatastore(datastore);
+    authServlet.setDatastore(datastore);
     // Setting mock server context.
     when(mockServletContext.getResourceAsStream(
         StudioServlet.CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json"))
@@ -88,16 +91,27 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
 
   @Test
   public void saveScene() throws Exception {
+    initResponseMock();
+    // Saves scene director to datastore.
+    User user = new User("my-iphone", "taylor", "davis", Timestamp.now());
+    // Mocks a request body with user.
+    when(mockRequest.getReader()).thenReturn(toBufferedReader(Util.GSON.toJson(user)));
+    // Sends the POST request
+    authServlet.doPost(mockRequest, mockResponse);
+    // Updates the user id.
+    User response = Util.GSON.fromJson(responseWriter.toString(), User.class);
+    user.setId(response.getId());
+    initResponseMock();
+    // Saves scene
+    Scene scene = new Scene(user, Timestamp.now(), null);
     // Initializing request mock
     String fileName = "src/test/resources/api/1x1_pixel.jpg";
-    when(mockImagePart.getContentType()).thenReturn(CONTENT_TYPE);
+    when(mockImagePart.getContentType()).thenReturn("image/jpeg");
     when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
     when(mockReactablePart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(Util.GSON.toJson(SCENE)));
+        TestUtil.toInputStream(Util.GSON.toJson(scene)));
     when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(mockImagePart);
     when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
-    StringWriter responseWriter = new StringWriter();
-    when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
     // Asserts that the reactable was saved into the Datastore.
@@ -110,5 +124,16 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     // Asserts that the scene's image is saved, and matches the uploaded one.
     TestUtil.assertUrl(savedScene.getImageSignedUrl(), HttpURLConnection.HTTP_OK,
         new FileInputStream(new File(fileName)));
+    scene.setDirector(null);
+    scene.setDirectorId(user.getId());
+    scene.setId(savedScene.getId());
+    scene.setImageSignedUrl(savedScene.getImageSignedUrl());
+    assertEquals(scene, savedScene);
+  }
+
+  private void initResponseMock() throws Exception {
+    // Resets response mock.
+    responseWriter = new StringWriter();
+    when(mockResponse.getWriter()).thenReturn(new PrintWriter(responseWriter));
   }
 }
