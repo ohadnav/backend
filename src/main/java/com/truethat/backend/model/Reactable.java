@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * Proudly created by ohad on 27/06/2017.
  * <p>
- * A media item that the user can be reacted to, such as a {@link Scene}.
+ * A media item that the user can be reacted to, such as a {@link Pose}.
  * <p>
  * Each implementation should register at {@link Util#GSON}.
  *
@@ -96,8 +96,8 @@ import javax.servlet.http.HttpServletRequest;
     }
     String type = entity.getString(DATASTORE_TYPE);
     Reactable reactable = null;
-    if (Objects.equals(type, Scene.class.getSimpleName())) {
-      reactable = new Scene(entity);
+    if (Objects.equals(type, Pose.class.getSimpleName())) {
+      reactable = new Pose(entity);
     }
     return reactable;
   }

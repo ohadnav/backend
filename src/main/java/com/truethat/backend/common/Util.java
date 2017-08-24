@@ -7,8 +7,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.truethat.backend.external.GsonUTCDateAdapter;
 import com.truethat.backend.external.RuntimeTypeAdapterFactory;
+import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Scene;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,7 +22,7 @@ public class Util {
       new GsonBuilder()
           .registerTypeAdapter(Timestamp.class, new GsonUTCDateAdapter())
           .registerTypeAdapterFactory(
-              RuntimeTypeAdapterFactory.of(Reactable.class).registerSubtype(Scene.class))
+              RuntimeTypeAdapterFactory.of(Reactable.class).registerSubtype(Pose.class))
           .create();
 
   public static String inputStreamToString(InputStream inputStream) throws IOException {

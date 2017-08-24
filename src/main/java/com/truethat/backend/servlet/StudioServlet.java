@@ -5,8 +5,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Scene;
 import com.truethat.backend.storage.DefaultStorageClient;
 import com.truethat.backend.storage.DefaultUrlSigner;
 import com.truethat.backend.storage.StorageClient;
@@ -96,9 +96,9 @@ public class StudioServlet extends BaseServlet {
    * Saves the {@link Reactable} within the request to storage and datastore, and response the saved
    * {@link Reactable} The request is expected to be multipart HTTP request with three parts: 1)
    * image 2) director ID as string 3) created timestamp as string. (i.e. '1234567890') <p> Part
-   * names are found in {@link Scene}.
+   * names are found in {@link Pose}.
    *
-   * @param req multipart request with the scene image and director ID.
+   * @param req multipart request with the pose image and director ID.
    */
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)

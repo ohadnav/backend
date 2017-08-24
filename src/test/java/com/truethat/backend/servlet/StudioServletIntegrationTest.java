@@ -7,8 +7,8 @@ import com.google.cloud.datastore.testing.LocalDatastoreHelper;
 import com.google.common.collect.Lists;
 import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import com.truethat.backend.storage.BaseStorageTestSuite;
 import java.io.File;
@@ -90,9 +90,9 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
   }
 
   @Test
-  public void saveScene() throws Exception {
+  public void savePose() throws Exception {
     initResponseMock();
-    // Saves scene director to datastore.
+    // Saves pose director to datastore.
     User user = new User("my-iphone", "taylor", "davis", Timestamp.now());
     // Mocks a request body with user.
     when(mockRequest.getReader()).thenReturn(toBufferedReader(Util.GSON.toJson(user)));
@@ -102,33 +102,33 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     User response = Util.GSON.fromJson(responseWriter.toString(), User.class);
     user.setId(response.getId());
     initResponseMock();
-    // Saves scene
-    Scene scene = new Scene(user, Timestamp.now(), null);
+    // Saves pose
+    Pose pose = new Pose(user, Timestamp.now(), null);
     // Initializing request mock
     String fileName = "src/test/resources/api/1x1_pixel.jpg";
     when(mockImagePart.getContentType()).thenReturn("image/jpeg");
     when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
     when(mockReactablePart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(Util.GSON.toJson(scene)));
-    when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(mockImagePart);
+        TestUtil.toInputStream(Util.GSON.toJson(pose)));
+    when(mockRequest.getPart(Pose.IMAGE_PART)).thenReturn(mockImagePart);
     when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
     // Asserts that the reactable was saved into the Datastore.
-    Scene savedScene = (Scene) Lists.newArrayList(datastore.run(
+    Pose savedPose = (Pose) Lists.newArrayList(datastore.run(
         Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND).build()))
         .stream()
         .map(Reactable::fromEntity)
         .collect(toList())
         .get(0);
-    // Asserts that the scene's image is saved, and matches the uploaded one.
-    TestUtil.assertUrl(savedScene.getImageSignedUrl(), HttpURLConnection.HTTP_OK,
+    // Asserts that the pose's image is saved, and matches the uploaded one.
+    TestUtil.assertUrl(savedPose.getImageSignedUrl(), HttpURLConnection.HTTP_OK,
         new FileInputStream(new File(fileName)));
-    scene.setDirector(null);
-    scene.setDirectorId(user.getId());
-    scene.setId(savedScene.getId());
-    scene.setImageSignedUrl(savedScene.getImageSignedUrl());
-    assertEquals(scene, savedScene);
+    pose.setDirector(null);
+    pose.setDirectorId(user.getId());
+    pose.setId(savedPose.getId());
+    pose.setImageSignedUrl(savedPose.getImageSignedUrl());
+    assertEquals(pose, savedPose);
   }
 
   private void initResponseMock() throws Exception {

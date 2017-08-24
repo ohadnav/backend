@@ -15,39 +15,39 @@ import javax.servlet.http.Part;
 /**
  * Proudly created by ohad on 08/05/2017.
  *
- * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Scene.java</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Pose.java</a>
  */
-public class Scene extends Reactable {
+public class Pose extends Reactable {
   /**
    * Multipart HTTP request part names, as used by {@link com.truethat.backend.servlet.StudioServlet}.
    *
    * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioAPI.java</a>
    */
-  public static final String IMAGE_PART = "scene_image";
+  public static final String IMAGE_PART = "pose_image";
   /**
    * Datastore column names.
    */
   private static final String DATASTORE_IMAGE_SIGNED_URL = "imageSignedUrl";
   /**
-   * Sub path for scene images within the storage bucket.
+   * Sub path for pose images within the storage bucket.
    */
-  private static final String STORAGE_IMAGES_PATH = "scene/images/";
+  private static final String STORAGE_IMAGES_PATH = "pose/images/";
 
   private static final String DEFAULT_IMAGE_TYPE = "jpg";
 
   /**
-   * Authenticated query string for the scene image, which is stored in Google Storage.
+   * Authenticated query string for the pose image, which is stored in Google Storage.
    */
   private String imageSignedUrl;
 
-  Scene(Entity entity) {
+  Pose(Entity entity) {
     super(entity);
     if (entity.contains(DATASTORE_IMAGE_SIGNED_URL)) {
       imageSignedUrl = entity.getString(DATASTORE_IMAGE_SIGNED_URL);
     }
   }
 
-  @VisibleForTesting public Scene(User director, Timestamp created, String imageSignedUrl) {
+  @VisibleForTesting public Pose(User director, Timestamp created, String imageSignedUrl) {
     super(director, created);
     this.imageSignedUrl = imageSignedUrl;
   }
@@ -60,26 +60,26 @@ public class Scene extends Reactable {
     return builder;
   }
 
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Pose)) return false;
+    if (!super.equals(o)) return false;
+
+    Pose pose = (Pose) o;
+
+    return imageSignedUrl != null ? imageSignedUrl.equals(pose.imageSignedUrl)
+        : pose.imageSignedUrl == null;
+  }
+
   @Override void saveMedia(HttpServletRequest req, StudioServlet servlet) throws Exception {
     Part imagePart = req.getPart(IMAGE_PART);
-    if (imagePart == null) throw new IOException("Missing scene image, are you being shy?");
+    if (imagePart == null) throw new IOException("Missing pose image, are you being shy?");
     servlet.getStorageClient().save(getImagePath(),
         imagePart.getContentType(),
         ByteStreams.toByteArray(imagePart.getInputStream()),
         servlet.getBucketName());
     imageSignedUrl = servlet.getUrlSigner()
         .sign(servlet.getBucketName() + "/" + getImagePath());
-  }
-
-  @Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Scene)) return false;
-    if (!super.equals(o)) return false;
-
-    Scene scene = (Scene) o;
-
-    return imageSignedUrl != null ? imageSignedUrl.equals(scene.imageSignedUrl)
-        : scene.imageSignedUrl == null;
   }
 
   public String getImageSignedUrl() {

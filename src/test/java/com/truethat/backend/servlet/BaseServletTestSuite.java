@@ -13,8 +13,8 @@ import com.google.common.collect.Iterators;
 import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.InteractionEvent;
+import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import com.truethat.backend.storage.LocalStorageClient;
 import com.truethat.backend.storage.LocalUrlSigner;
@@ -132,34 +132,34 @@ public class BaseServletTestSuite {
   }
 
   /**
-   * Prepares request and response mocks for {@link #saveScene(Scene)}.
+   * Prepares request and response mocks for {@link #savePose(Pose)}.
    *
    * @param reactable to save
    */
-  void prepareSceneSave(Reactable reactable) throws Exception {
+  void preparePoseSave(Reactable reactable) throws Exception {
     File file = new File("src/test/resources/api/1x1_pixel.jpg");
     when(mockImagePart.getContentType()).thenReturn("image/jpeg");
     when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(file));
     when(mockReactablePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(reactable)));
-    when(mockRequest.getPart(Scene.IMAGE_PART)).thenReturn(mockImagePart);
+    when(mockRequest.getPart(Pose.IMAGE_PART)).thenReturn(mockImagePart);
     when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
   }
 
   /**
-   * Saves a scene to datastore and updates {@code scene} id.
+   * Saves a pose to datastore and updates {@code pose} id.
    *
-   * @param scene to save
+   * @param pose to save
    */
-  void saveScene(Scene scene) throws Exception {
+  void savePose(Pose pose) throws Exception {
     resetResponseMock();
-    prepareSceneSave(scene);
+    preparePoseSave(pose);
     studioServlet.doPost(mockRequest, mockResponse);
-    // Updates the scene id.
-    Scene respondedScene = Util.GSON.fromJson(responseWriter.toString(), Scene.class);
-    scene.setId(respondedScene.getId());
-    scene.setCreated(respondedScene.getCreated());
-    scene.setImageSignedUrl(respondedScene.getImageSignedUrl());
+    // Updates the pose id.
+    Pose respondedPose = Util.GSON.fromJson(responseWriter.toString(), Pose.class);
+    pose.setId(respondedPose.getId());
+    pose.setCreated(respondedPose.getCreated());
+    pose.setImageSignedUrl(respondedPose.getImageSignedUrl());
   }
 
   /**
@@ -172,7 +172,7 @@ public class BaseServletTestSuite {
     when(mockRequest.getReader()).thenReturn(
         toBufferedReader(Util.GSON.toJson(interactionEvent)));
     interactionServlet.doPost(mockRequest, mockResponse);
-    // Updates the scene id.
+    // Updates the pose id.
     InteractionEvent response =
         Util.GSON.fromJson(responseWriter.toString(), InteractionEvent.class);
     interactionEvent.setId(response.getId());

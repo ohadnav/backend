@@ -3,8 +3,8 @@ package com.truethat.backend.servlet;
 import com.google.cloud.Timestamp;
 import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Scene;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
  * Proudly created by ohad on 03/07/2017.
  */
 public class RepertoireServletTest extends BaseServletTestSuite {
-  private Scene scene;
+  private Pose pose;
   private RepertoireServlet repertoireServlet;
 
   @Override public void setUp() throws Exception {
@@ -26,7 +26,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     repertoireServlet = new RepertoireServlet();
     repertoireServlet.setDatastore(datastore);
     saveUser(defaultUser);
-    scene = new Scene(defaultUser, NOW, null);
+    pose = new Pose(defaultUser, NOW, null);
   }
 
   @Test(expected = Exception.class)
@@ -44,8 +44,8 @@ public class RepertoireServletTest extends BaseServletTestSuite {
 
   @Test
   public void fetchRepertoire() throws Exception {
-    // Add a scene to datastore.
-    saveScene(scene);
+    // Add a pose to datastore.
+    savePose(pose);
     // Sends the GET request
     prepareFetch();
     repertoireServlet.doPost(mockRequest, mockResponse);
@@ -54,9 +54,9 @@ public class RepertoireServletTest extends BaseServletTestSuite {
         Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
         }.getType());
     assertEquals(1, respondedReactables.size());
-    // Enriches scene.
-    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
-    assertEquals(scene, respondedReactables.get(0));
+    // Enriches pose.
+    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
+    assertEquals(pose, respondedReactables.get(0));
   }
 
   @SuppressWarnings("Duplicates") @Test
@@ -69,7 +69,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
   @Test public void fetchRepertoire_multipleReactables() throws Exception {
     // Save reactables
     for (int i = 0; i < RepertoireServlet.FETCH_LIMIT + 1; i++) {
-      saveScene(new Scene(defaultUser,
+      savePose(new Pose(defaultUser,
           Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), null));
     }
     prepareFetch();
@@ -83,10 +83,10 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     long recentTimestamp = respondedReactables.get(0).getCreated().getSeconds();
     // Asserts the reactables are sorted by recency.
     for (int i = 0; i < RepertoireServlet.FETCH_LIMIT; i++) {
-      Scene scene = (Scene) respondedReactables.get(i);
-      assertEquals(recentTimestamp - i, scene.getCreated().getSeconds());
+      Pose pose = (Pose) respondedReactables.get(i);
+      assertEquals(recentTimestamp - i, pose.getCreated().getSeconds());
       // Should have image url
-      assertNotNull(scene.getImageSignedUrl());
+      assertNotNull(pose.getImageSignedUrl());
     }
   }
 

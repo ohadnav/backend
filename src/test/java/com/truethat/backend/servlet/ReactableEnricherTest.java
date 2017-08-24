@@ -5,7 +5,7 @@ import com.google.common.collect.Maps;
 import com.truethat.backend.model.Emotion;
 import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.InteractionEvent;
-import com.truethat.backend.model.Scene;
+import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.User;
 import java.util.Collections;
 import org.junit.Test;
@@ -21,19 +21,19 @@ import static org.junit.Assert.assertTrue;
  */
 public class ReactableEnricherTest extends BaseServletTestSuite {
   private static final Emotion REACTION = HAPPY;
-  private Scene scene;
+  private Pose pose;
   private User director, friend;
 
   @Override public void setUp() throws Exception {
     super.setUp();
-    // Adds the director of the scene to datastore
+    // Adds the director of the pose to datastore
     director = new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
     friend = new User("my-phone", "the", "terminator", NOW);
     saveUser(director);
     saveUser(friend);
-    // Saves a scene.
-    scene = new Scene(director, NOW, null);
-    saveScene(scene);
+    // Saves a pose.
+    pose = new Pose(director, NOW, null);
+    savePose(pose);
     // Adds the user.
     saveUser(defaultUser);
   }
@@ -45,95 +45,98 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
 
   @Test public void enrichReactable_reaction() throws Exception {
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
             REACTION);
     // Saves the event.
     saveInteraction(interactionEvent);
-    // Enriches the scene
-    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
-    assertEquals(REACTION, scene.getUserReaction());
-    assertTrue(Maps.difference(ImmutableMap.of(REACTION, 1L), scene.getReactionCounters()).areEqual());
+    // Enriches the pose
+    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
+    assertEquals(REACTION, pose.getUserReaction());
+    assertTrue(
+        Maps.difference(ImmutableMap.of(REACTION, 1L), pose.getReactionCounters()).areEqual());
   }
 
   @Test public void enrichReactable_multipleReactions() throws Exception {
     // Saves a happy reaction.
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
             HAPPY);
     saveInteraction(interactionEvent);
     // Saves a sad reaction.
     interactionEvent =
-        new InteractionEvent(friend.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(friend.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
             SAD);
     // Saves the event.
     saveInteraction(interactionEvent);
-    // Enriches the scene
-    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
-    assertTrue(Maps.difference(ImmutableMap.of(HAPPY, 1L, SAD, 1L), scene.getReactionCounters()).areEqual());
+    // Enriches the pose
+    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
+    assertTrue(Maps.difference(ImmutableMap.of(HAPPY, 1L, SAD, 1L), pose.getReactionCounters())
+        .areEqual());
   }
 
   @Test public void enrichReactable_multipleUsers() throws Exception {
     // Saves a happy reaction.
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
             HAPPY);
     saveInteraction(interactionEvent);
     // Saves a sad reaction.
     interactionEvent =
-        new InteractionEvent(friend.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(friend.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
             HAPPY);
     // Saves the event.
     saveInteraction(interactionEvent);
-    // Enriches the scene
-    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
-    assertTrue(Maps.difference(ImmutableMap.of(HAPPY, 2L), scene.getReactionCounters()).areEqual());
+    // Enriches the pose
+    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
+    assertTrue(Maps.difference(ImmutableMap.of(HAPPY, 2L), pose.getReactionCounters()).areEqual());
   }
 
   @Test public void enrichReactable_reactionUniqueIds() throws Exception {
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
             REACTION);
     // Saves the event.
     saveInteraction(interactionEvent);
     // Saves the event.
     saveInteraction(interactionEvent);
-    // Enriches the scene
-    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
-    assertTrue(Maps.difference(ImmutableMap.of(REACTION, 1L), scene.getReactionCounters()).areEqual());
+    // Enriches the pose
+    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
+    assertTrue(
+        Maps.difference(ImmutableMap.of(REACTION, 1L), pose.getReactionCounters()).areEqual());
   }
 
   @Test public void enrichReactable_view() throws Exception {
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_VIEW,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_VIEW,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);
-    // Enriches the scene
-    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
-    assertTrue(scene.isViewed());
+    // Enriches the pose
+    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
+    assertTrue(pose.isViewed());
   }
 
   @Test public void enrichReactable_userIsDirector() throws Exception {
     InteractionEvent interactionEvent =
-        new InteractionEvent(director.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(director.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
             REACTION);
     // Saves the event.
     saveInteraction(interactionEvent);
-    // Enriches the scene
-    enricher.enrichReactables(Collections.singletonList(scene), director);
-    assertTrue(scene.isViewed());
-    assertEquals(null, scene.getUserReaction());
-    assertTrue(scene.getReactionCounters().isEmpty());
+    // Enriches the pose
+    enricher.enrichReactables(Collections.singletonList(pose), director);
+    assertTrue(pose.isViewed());
+    assertEquals(null, pose.getUserReaction());
+    assertTrue(pose.getReactionCounters().isEmpty());
   }
 
   @Test public void enrichReactable_user() throws Exception {
-    // Enriches the scene
-    enricher.enrichReactables(Collections.singletonList(scene), defaultUser);
+    // Enriches the pose
+    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
     // Director field should be assigned
-    assertEquals(director.getId(), scene.getDirectorId());
-    assertEquals(director.getFirstName(), scene.getDirector().getFirstName());
-    assertEquals(director.getLastName(), scene.getDirector().getLastName());
+    assertEquals(director.getId(), pose.getDirectorId());
+    assertEquals(director.getFirstName(), pose.getDirector().getFirstName());
+    assertEquals(director.getLastName(), pose.getDirector().getLastName());
     // Private information should not be passed.
-    assertNull(scene.getDirector().getDeviceId());
+    assertNull(pose.getDirector().getDeviceId());
   }
 }
