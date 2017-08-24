@@ -27,10 +27,11 @@ public class TheaterServletTest extends BaseServletTestSuite {
 
   @Override public void setUp() throws Exception {
     super.setUp();
-    theaterServlet = new TheaterServlet().setDatastore(datastore);
+    theaterServlet = new TheaterServlet();
+    theaterServlet.setDatastore(datastore);
     saveUser(director);
     saveUser(defaultUser);
-    scene = new Scene(director.getId(), NOW, null);
+    scene = new Scene(director, NOW, null);
   }
 
   @Test
@@ -65,9 +66,32 @@ public class TheaterServletTest extends BaseServletTestSuite {
     assertTrue(respondedReactables.isEmpty());
   }
 
+  @Test
+  public void validateReactables() throws Exception {
+    prepareFetch();
+    saveScene(scene);
+    datastore.delete(userKeyFactory.newKey(director.getId()));
+    resetResponseMock();
+    // Sends the GET request
+    theaterServlet.doPost(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertEquals(0, respondedReactables.size());
+  }
+
   @Test(expected = Exception.class)
   public void fetchReactables_missingUser() throws Exception {
     saveScene(scene);
+    when(mockRequest.getReader()).thenReturn(null);
+    theaterServlet.doPost(mockRequest, mockResponse);
+  }
+
+  @Test(expected = Exception.class)
+  public void fetchReactables_userNotFound() throws Exception {
+    saveScene(scene);
+    datastore.delete(userKeyFactory.newKey(defaultUser.getId()));
     when(mockRequest.getReader()).thenReturn(null);
     theaterServlet.doPost(mockRequest, mockResponse);
   }
@@ -90,7 +114,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
     prepareFetch();
     // Add 11 scenes to datastore.
     for (int i = 0; i < TheaterServlet.FETCH_LIMIT + 1; i++) {
-      saveScene(new Scene(director.getId(),
+      saveScene(new Scene(director,
           Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), null));
     }
     resetResponseMock();

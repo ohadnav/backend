@@ -1,7 +1,5 @@
 package com.truethat.backend.servlet;
 
-import com.google.cloud.datastore.Datastore;
-import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.StructuredQuery;
@@ -15,10 +13,10 @@ import java.util.Comparator;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static com.truethat.backend.servlet.TheaterServlet.isValidUser;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -27,16 +25,8 @@ import static java.util.stream.Collectors.toList;
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/RepertoireAPI.java</a>
  */
 @WebServlet(value = "/repertoire", name = "Repertoire")
-public class RepertoireServlet extends HttpServlet {
+public class RepertoireServlet extends BaseServlet {
   @VisibleForTesting static final int FETCH_LIMIT = 10;
-  private Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
-  private ReactableEnricher enricher = new ReactableEnricher(datastore);
-
-  public RepertoireServlet setDatastore(Datastore datastore) {
-    this.datastore = datastore;
-    enricher = new ReactableEnricher(datastore);
-    return this;
-  }
 
   /**
    * Getting the user's repertoire, i.e. the {@link Reactable}s he had created.
@@ -47,6 +37,10 @@ public class RepertoireServlet extends HttpServlet {
       throws ServletException, IOException {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     if (user == null) throw new IOException("Missing user");
+    StringBuilder errorBuilder = new StringBuilder();
+    if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
+      throw new IOException("Invalid user: " + errorBuilder);
+    }
     Query<Entity> query = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
         .setFilter(StructuredQuery.PropertyFilter.eq(Reactable.DATASTORE_DIRECTOR_ID, user.getId()))
         .setLimit(FETCH_LIMIT)

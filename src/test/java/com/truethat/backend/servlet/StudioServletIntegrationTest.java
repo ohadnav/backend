@@ -9,6 +9,7 @@ import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
+import com.truethat.backend.model.User;
 import com.truethat.backend.storage.BaseStorageTestSuite;
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,10 +38,10 @@ import static org.mockito.Mockito.when;
  */
 public class StudioServletIntegrationTest extends BaseStorageTestSuite {
   private static final LocalDatastoreHelper HELPER = LocalDatastoreHelper.create(1.0);
-  private static final long DIRECTOR_ID = 123L;
   private static final Timestamp NOW = Timestamp.now();
   private static final String CONTENT_TYPE = "image/jpeg";
-  private static final Scene SCENE = new Scene(DIRECTOR_ID, NOW, null);
+  private static final Scene SCENE =
+      new Scene(new User("my-android", "frudo", "baggins", NOW), NOW, null);
   @Mock
   private ServletConfig mockServletConfig;
   @Mock
@@ -74,7 +75,8 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     HELPER.reset();
     datastore = HELPER.getOptions().getService();
     // Initialize servlet
-    studioServlet = new StudioServlet().setDatastore(datastore);
+    studioServlet = new StudioServlet();
+    studioServlet.setDatastore(datastore);
     // Setting mock server context.
     when(mockServletContext.getResourceAsStream(
         StudioServlet.CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json"))

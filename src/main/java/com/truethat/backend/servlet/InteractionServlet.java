@@ -1,14 +1,11 @@
 package com.truethat.backend.servlet;
 
-import com.google.cloud.datastore.Datastore;
-import com.google.cloud.datastore.DatastoreOptions;
-import com.google.cloud.datastore.KeyFactory;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.InteractionEvent;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -18,17 +15,7 @@ import javax.servlet.http.HttpServletResponse;
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/InteractionAPI.java</a>
  */
 @WebServlet(value = "/interaction", name = "InteractionEvent")
-public class InteractionServlet extends HttpServlet {
-  private Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
-  private KeyFactory eventKeyFactory =
-      datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
-
-  public InteractionServlet setDatastore(Datastore datastore) {
-    this.datastore = datastore;
-    eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
-    return this;
-  }
-
+public class InteractionServlet extends BaseServlet {
   /**
    * Saves events to Datastore, and response the saved {@link InteractionEvent}.
    */
@@ -37,13 +24,60 @@ public class InteractionServlet extends HttpServlet {
       throws ServletException, IOException {
     InteractionEvent interactionEvent = Util.GSON.fromJson(req.getReader(), InteractionEvent.class);
     if (interactionEvent == null) throw new IOException("Missing interaction event");
-    if (!interactionEvent.isValid()) {
-      throw new IOException("Invalid interaction event: " + Util.GSON.toJson(interactionEvent));
+    StringBuilder errorBuilder = new StringBuilder();
+    if (!isEventValid(interactionEvent, errorBuilder)) {
+      throw new IOException("Invalid interaction event: " + errorBuilder);
     }
     // Puts the event in the datastore and responds it to the client.
     resp.getWriter()
         .print(Util.GSON.toJson(
             new InteractionEvent(
                 datastore.add(interactionEvent.toEntityBuilder(eventKeyFactory).build()))));
+  }
+
+  /**
+   * @return whether the event has a valid data.
+   */
+  @SuppressWarnings("RedundantIfStatement") private boolean isEventValid(
+      InteractionEvent interactionEvent, StringBuilder errorBuilder) {
+    if (interactionEvent.getTimestamp() == null) {
+      errorBuilder.append("missing timestamp.");
+      return false;
+    }
+    if (interactionEvent.getEventType() == null) {
+      errorBuilder.append("missing event type.");
+      return false;
+    }
+    if (interactionEvent.getEventType() == EventType.REACTABLE_VIEW
+        && interactionEvent.getReaction() != null) {
+      errorBuilder.append("reaction exists for view event.");
+      return false;
+    }
+    if (interactionEvent.getEventType() == EventType.REACTABLE_REACTION
+        && interactionEvent.getReaction() == null) {
+      errorBuilder.append("missing reaction for reaction event.");
+      return false;
+    }
+    if (interactionEvent.getUserId() == null) {
+      errorBuilder.append("missing user ID.");
+      return false;
+    }
+    if (datastore.get(userKeyFactory.newKey(interactionEvent.getUserId())) == null) {
+      errorBuilder.append("user with ID ")
+          .append(interactionEvent.getUserId())
+          .append(" not found.");
+      return false;
+    }
+    if (interactionEvent.getReactableId() == null) {
+      errorBuilder.append("missing reactable ID.");
+      return false;
+    }
+    if (datastore.get(reactableKeyFactory.newKey(interactionEvent.getReactableId())) == null) {
+      errorBuilder.append("reactable with ID ")
+          .append(interactionEvent.getUserId())
+          .append(" not found.");
+      return false;
+    }
+    return true;
   }
 }

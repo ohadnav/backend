@@ -4,6 +4,7 @@ import com.google.cloud.Timestamp;
 import com.google.gson.JsonElement;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
+import com.truethat.backend.model.User;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Date;
@@ -19,7 +20,8 @@ import static org.junit.Assert.assertTrue;
 public class UtilTest {
   private static final Timestamp TIMESTAMP = Timestamp.of(new Date(1));
   private static final String UTC_DATE = "\"1970-01-01T00:00:00.001+0000\"";
-  private static final Reactable SCENE = new Scene(1L, TIMESTAMP, "url");
+  private static final Reactable SCENE =
+      new Scene(new User("iPhone 1", "Copa", "cabana", TIMESTAMP), TIMESTAMP, "url");
 
   @Test
   public void inputStreamToString() throws Exception {

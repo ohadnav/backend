@@ -33,7 +33,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
     saveUser(director);
     saveUser(friend);
     // Saves a scene.
-    scene = new Scene(director.getId(), NOW, null);
+    scene = new Scene(director, NOW, null);
     saveScene(scene);
     // Adds the user.
     saveUser(defaultUser);

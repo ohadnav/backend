@@ -23,13 +23,21 @@ public class RepertoireServletTest extends BaseServletTestSuite {
 
   @Override public void setUp() throws Exception {
     super.setUp();
-    repertoireServlet = new RepertoireServlet().setDatastore(datastore);
+    repertoireServlet = new RepertoireServlet();
+    repertoireServlet.setDatastore(datastore);
     saveUser(defaultUser);
-    scene = new Scene(defaultUser.getId(), NOW, null);
+    scene = new Scene(defaultUser, NOW, null);
   }
 
   @Test(expected = Exception.class)
-  public void fetchRepertoire_missingUser() throws Exception {
+  public void fetchReactables_missingUser() throws Exception {
+    when(mockRequest.getReader()).thenReturn(null);
+    repertoireServlet.doPost(mockRequest, mockResponse);
+  }
+
+  @Test(expected = Exception.class)
+  public void fetchReactables_userNotFound() throws Exception {
+    datastore.delete(userKeyFactory.newKey(defaultUser.getId()));
     when(mockRequest.getReader()).thenReturn(null);
     repertoireServlet.doPost(mockRequest, mockResponse);
   }
@@ -61,7 +69,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
   @Test public void fetchRepertoire_multipleReactables() throws Exception {
     // Save reactables
     for (int i = 0; i < RepertoireServlet.FETCH_LIMIT + 1; i++) {
-      saveScene(new Scene(defaultUser.getId(),
+      saveScene(new Scene(defaultUser,
           Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), null));
     }
     prepareFetch();

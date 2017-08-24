@@ -75,8 +75,8 @@ import javax.servlet.http.HttpServletRequest;
     }
   }
 
-  @VisibleForTesting public Reactable(Long directorId, Timestamp created) {
-    this.directorId = directorId;
+  @VisibleForTesting public Reactable(User director, Timestamp created) {
+    this.director = director;
     this.created = created;
   }
 
@@ -86,7 +86,9 @@ import javax.servlet.http.HttpServletRequest;
 
   /**
    * @param entity to create a {@link Reactable} from.
-   * @return a {@link Reactable} based on {@code entity}. The correct constructor is called based on {@code entity.getProperty(DATASTORE_TYPE}.
+   *
+   * @return a {@link Reactable} based on {@code entity}. The correct constructor is called based on
+   * {@code entity.getProperty(DATASTORE_TYPE}.
    */
   public static Reactable fromEntity(Entity entity) {
     if (entity.getString(DATASTORE_TYPE) == null) {
@@ -134,7 +136,7 @@ import javax.servlet.http.HttpServletRequest;
     this.director = director;
   }
 
-  public long getDirectorId() {
+  public Long getDirectorId() {
     return director == null ? directorId : director.getId();
   }
 
@@ -156,7 +158,7 @@ import javax.servlet.http.HttpServletRequest;
     if (created != null) {
       builder.set(DATASTORE_CREATED, created);
     }
-    if (directorId != null) {
+    if (getDirectorId() != null) {
       builder.set(DATASTORE_DIRECTOR_ID, getDirectorId());
     }
     return builder;

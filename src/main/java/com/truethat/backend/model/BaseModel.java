@@ -30,11 +30,7 @@ public abstract class BaseModel {
     return builder;
   }
 
-  public boolean hasId() {
-    return id != null;
-  }
-
-  public long getId() {
+  public Long getId() {
     return id;
   }
 

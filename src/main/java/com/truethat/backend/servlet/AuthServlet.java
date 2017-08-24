@@ -1,10 +1,7 @@
 package com.truethat.backend.servlet;
 
-import com.google.cloud.datastore.Datastore;
-import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.FullEntity;
-import com.google.cloud.datastore.KeyFactory;
 import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.QueryResults;
 import com.google.cloud.datastore.StructuredQuery;
@@ -15,7 +12,6 @@ import java.io.IOException;
 import javax.annotation.Nullable;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -26,24 +22,17 @@ import javax.servlet.http.HttpServletResponse;
  */
 
 @WebServlet(value = "/auth", name = "Auth")
-public class AuthServlet extends HttpServlet {
-  private Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
-  private KeyFactory userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
-
-  public AuthServlet setDatastore(Datastore datastore) {
-    this.datastore = datastore;
-    userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
-    return this;
-  }
+public class AuthServlet extends BaseServlet {
 
   @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     User respondedUser = null;
+    // Validating input
     if (user == null) throw new IOException("Missing user");
     FullEntity userEntity = user.toEntityBuilder(userKeyFactory).build();
     // If ID is missing, then it is a sign up or a sign in.
-    if (!user.hasId()) {
+    if (user.getId() == null) {
       Entity similarUserEntity = similarUser(user);
       if (similarUserEntity != null) {
         // If a similar user was found, then don't create a new one in datastore,
@@ -52,6 +41,11 @@ public class AuthServlet extends HttpServlet {
         datastore.update(mergedEntity);
         respondedUser = new User(mergedEntity);
       } else {
+        // Validate input.
+        StringBuilder errorBuilder = new StringBuilder();
+        if (!isValidUser(user, errorBuilder)) {
+          throw new IOException("Invalid user: " + errorBuilder);
+        }
         // Put a new entity in datastore.
         respondedUser = new User(datastore.add(userEntity));
       }
@@ -100,7 +94,7 @@ public class AuthServlet extends HttpServlet {
   }
 
   private @Nullable Entity findUser(User user) {
-    if (user.hasId()) {
+    if (user.getId() != null) {
       return datastore.get(userKeyFactory.newKey(user.getId()));
     }
     return null;
@@ -127,5 +121,33 @@ public class AuthServlet extends HttpServlet {
       builder.set(User.DATASTORE_DEVICE_ID, fromClient.getDeviceId());
     }
     return builder;
+  }
+
+  private boolean isValidUser(User user, StringBuilder errorBuilder) {
+    if (user.getFirstName() == null) {
+      errorBuilder.append("missing first name");
+      return false;
+    } else if (user.getFirstName().length() <= 1) {
+      errorBuilder.append(user.getFirstName()).append(" is too short for a first name.");
+      return false;
+    } else if (!user.getFirstName().matches("[a-z]*")) {
+      errorBuilder.append("first name ")
+          .append(user.getFirstName())
+          .append(" has illegal characters (only lowercase english characters are allowed).");
+      return false;
+    }
+    if (user.getLastName() == null) {
+      errorBuilder.append("missing last name");
+      return false;
+    } else if (user.getLastName().length() <= 1) {
+      errorBuilder.append(user.getLastName()).append(" is too short for a last name.");
+      return false;
+    } else if (!user.getLastName().matches("[a-z\\s]*")) {
+      errorBuilder.append("last name ")
+          .append(user.getLastName())
+          .append(" has illegal characters (only lowercase english characters are allowed).");
+      return false;
+    }
+    return true;
   }
 }

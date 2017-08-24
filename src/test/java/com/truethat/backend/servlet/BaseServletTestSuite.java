@@ -8,6 +8,7 @@ import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.QueryResults;
 import com.google.cloud.datastore.StructuredQuery;
 import com.google.cloud.datastore.testing.LocalDatastoreHelper;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterators;
 import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
@@ -46,7 +47,7 @@ import static org.mockito.Mockito.when;
 public class BaseServletTestSuite {
   static final String DEVICE_ID = "my-iPhone";
   static final String FIRST_NAME = "django";
-  static final String LAST_NAME = "unchained";
+  static final String LAST_NAME = "the unchained";
   static final Timestamp NOW = Timestamp.now();
   private static final LocalDatastoreHelper HELPER = LocalDatastoreHelper.create(1.0);
 
@@ -86,20 +87,20 @@ public class BaseServletTestSuite {
     datastore = HELPER.getOptions().getService();
     userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
     eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
-    // Empty datastore
-    StructuredQuery<Key> query = Query.newKeyQueryBuilder().build();
-    QueryResults<Key> result = datastore.run(query);
-    datastore.delete(Iterators.toArray(result, Key.class));
+    emptyDatastore(null);
     // Initialize Servlets
     resetResponseMock();
-    interactionServlet = new InteractionServlet().setDatastore(datastore);
-    authServlet = new AuthServlet().setDatastore(datastore);
+    interactionServlet = new InteractionServlet();
+    interactionServlet.setDatastore(datastore);
+    authServlet = new AuthServlet();
+    authServlet.setDatastore(datastore);
     // Initialize Studio servlet
     when(mockServletContext.getResourceAsStream(
         StudioServlet.CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json"))
         .thenReturn(new FileInputStream(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")));
     when(mockServletConfig.getServletContext()).thenReturn(mockServletContext);
-    studioServlet = new StudioServlet().setDatastore(datastore);
+    studioServlet = new StudioServlet();
+    studioServlet.setDatastore(datastore);
     studioServlet.init(mockServletConfig);
     enricher = new ReactableEnricher(datastore);
     // Setting up local services.
@@ -109,6 +110,20 @@ public class BaseServletTestSuite {
     studioServlet.setStorageClient(storageClient);
     // Initializes user
     defaultUser = new User(DEVICE_ID, FIRST_NAME, LAST_NAME, NOW);
+  }
+
+  /**
+   * Removes all entities from datastore.
+   *
+   * @param kind to empty
+   */
+  void emptyDatastore(String kind) {
+    StructuredQuery.Builder<Key> queryBuilder = Query.newKeyQueryBuilder();
+    if (!Strings.isNullOrEmpty(kind)) {
+      queryBuilder.setKind(kind);
+    }
+    QueryResults<Key> result = datastore.run(queryBuilder.build());
+    datastore.delete(Iterators.toArray(result, Key.class));
   }
 
   @After

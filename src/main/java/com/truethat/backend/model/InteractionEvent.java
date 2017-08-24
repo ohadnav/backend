@@ -73,7 +73,7 @@ import javax.annotation.Nullable;
     }
   }
   @VisibleForTesting
-  public InteractionEvent(long userId, long reactableId, Timestamp timestamp, EventType eventType,
+  public InteractionEvent(Long userId, Long reactableId, Timestamp timestamp, EventType eventType,
       @Nullable
       Emotion reaction) {
     this.timestamp = timestamp;
@@ -81,17 +81,6 @@ import javax.annotation.Nullable;
     this.reaction = reaction;
     this.eventType = eventType;
     this.reactableId = reactableId;
-  }
-
-  /**
-   * @return whether the event has a valid data.
-   */
-  public boolean isValid() {
-    if (eventType == null) return false;
-    if (eventType == EventType.REACTABLE_VIEW) return reaction == null;
-    if (eventType == EventType.REACTABLE_REACTION) return reaction != null;
-    // Should not reach here.
-    return false;
   }
 
   @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
@@ -140,8 +129,12 @@ import javax.annotation.Nullable;
     return reactableId != null ? reactableId.equals(that.reactableId) : that.reactableId == null;
   }
 
-  public long getUserId() {
+  public Long getUserId() {
     return userId;
+  }
+
+  public Long getReactableId() {
+    return reactableId;
   }
 
   public Emotion getReaction() {

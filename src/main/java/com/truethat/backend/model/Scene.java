@@ -47,8 +47,8 @@ public class Scene extends Reactable {
     }
   }
 
-  @VisibleForTesting public Scene(Long directorId, Timestamp created, String imageSignedUrl) {
-    super(directorId, created);
+  @VisibleForTesting public Scene(User director, Timestamp created, String imageSignedUrl) {
+    super(director, created);
     this.imageSignedUrl = imageSignedUrl;
   }
 

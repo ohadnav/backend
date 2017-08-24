@@ -1,8 +1,5 @@
 package com.truethat.backend.servlet;
 
-import com.google.cloud.datastore.Datastore;
-import com.google.cloud.datastore.DatastoreOptions;
-import com.google.cloud.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -23,7 +20,6 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -36,13 +32,10 @@ import javax.servlet.http.Part;
 
 @WebServlet(value = "/studio", name = "Studio")
 @MultipartConfig
-public class StudioServlet extends HttpServlet {
+public class StudioServlet extends BaseServlet {
   @VisibleForTesting
   static final String CREDENTIALS_PATH = "credentials/";
   private static final Logger LOG = Logger.getLogger(StudioServlet.class.getName());
-  private Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
-  private KeyFactory reactableKeyFactory =
-      datastore.newKeyFactory().setKind(Reactable.DATASTORE_KIND);
   private StorageClient storageClient;
   private UrlSigner urlSigner;
   private String bucketName = System.getenv("STUDIO_BUCKET");
@@ -56,18 +49,8 @@ public class StudioServlet extends HttpServlet {
     this.bucketName = bucketName;
   }
 
-  public Datastore getDatastore() {
-    return datastore;
-  }
-
   public StorageClient getStorageClient() {
     return storageClient;
-  }
-
-  public StudioServlet setDatastore(Datastore datastore) {
-    this.datastore = datastore;
-    reactableKeyFactory = datastore.newKeyFactory().setKind(Reactable.DATASTORE_KIND);
-    return this;
   }
 
   public UrlSigner getUrlSigner() {
@@ -76,10 +59,6 @@ public class StudioServlet extends HttpServlet {
 
   void setUrlSigner(UrlSigner urlSigner) {
     this.urlSigner = urlSigner;
-  }
-
-  public KeyFactory getReactableKeyFactory() {
-    return reactableKeyFactory;
   }
 
   @Override
@@ -130,13 +109,43 @@ public class StudioServlet extends HttpServlet {
       Reactable toSave =
           Util.GSON.fromJson(new InputStreamReader(reactablePart.getInputStream()),
               Reactable.class);
+      StringBuilder errorBuilder = new StringBuilder();
+      if (!isValidReactable(toSave, errorBuilder)) {
+        throw new IOException("Reactable is invalid: " + errorBuilder);
+      }
       toSave.save(req, this);
       resp.getWriter().print(Util.GSON.toJson(toSave));
     } catch (Exception e) {
       e.printStackTrace();
-      LOG.severe("Oh oh... " + e.getMessage());
       resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
       throw new ServletException(e.getMessage());
     }
+  }
+
+  /**
+   * @return whether the reactable has a valid data, and can be saved.
+   */
+  @SuppressWarnings("RedundantIfStatement") private boolean isValidReactable(Reactable reactable,
+      StringBuilder errorBuilder) {
+    // Make sure ths director exists
+    if (reactable.getDirector() == null) {
+      errorBuilder.append("missing director.");
+      return false;
+    }
+    if (reactable.getDirector().getId() == null) {
+      errorBuilder.append("missing director ID.");
+      return false;
+    }
+    if (datastore.get(userKeyFactory.newKey(reactable.getDirector().getId())) == null) {
+      errorBuilder.append("director(i.e. a user) with ID ")
+          .append(reactable.getDirectorId())
+          .append(" not found.");
+      return false;
+    }
+    if (reactable.getCreated() == null) {
+      errorBuilder.append("missing created timestamp");
+      return false;
+    }
+    return true;
   }
 }

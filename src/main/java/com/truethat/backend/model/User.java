@@ -107,6 +107,10 @@ import javax.annotation.Nullable;
     return lastName;
   }
 
+  public void setLastName(String lastName) {
+    this.lastName = lastName;
+  }
+
   @SuppressWarnings("SimplifiableIfStatement") @Override public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof User)) return false;

@@ -3,6 +3,7 @@ package com.truethat.backend.servlet;
 import com.truethat.backend.model.Emotion;
 import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.InteractionEvent;
+import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.io.IOException;
@@ -22,7 +23,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
     super.setUp();
     saveUser(director);
     saveUser(defaultUser);
-    scene = new Scene(director.getId(), NOW, null);
+    scene = new Scene(director, NOW, null);
   }
 
   @Test
@@ -64,6 +65,58 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
   @Test(expected = IOException.class)
   public void invalidEvent_reactionWitouthReaction() throws Exception {
     saveScene(scene);
+    InteractionEvent interactionEvent =
+        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+            null);
+    // Saves the event.
+    saveInteraction(interactionEvent);
+  }
+
+  @Test(expected = IOException.class)
+  public void invalidEvent_missingUserId() throws Exception {
+    saveScene(scene);
+    InteractionEvent interactionEvent =
+        new InteractionEvent(null, scene.getId(), NOW, EventType.REACTABLE_REACTION,
+            null);
+    // Saves the event.
+    saveInteraction(interactionEvent);
+  }
+
+  @Test(expected = IOException.class)
+  public void invalidEvent_userNotFound() throws Exception {
+    saveScene(scene);
+    emptyDatastore(User.DATASTORE_KIND);
+    InteractionEvent interactionEvent =
+        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
+            null);
+    // Saves the event.
+    saveInteraction(interactionEvent);
+  }
+
+  @Test(expected = IOException.class)
+  public void invalidEvent_missingTimestamp() throws Exception {
+    saveScene(scene);
+    InteractionEvent interactionEvent =
+        new InteractionEvent(defaultUser.getId(), scene.getId(), null, EventType.REACTABLE_REACTION,
+            null);
+    // Saves the event.
+    saveInteraction(interactionEvent);
+  }
+
+  @Test(expected = IOException.class)
+  public void invalidEvent_missingReactableId() throws Exception {
+    saveScene(scene);
+    InteractionEvent interactionEvent =
+        new InteractionEvent(defaultUser.getId(), null, NOW, EventType.REACTABLE_REACTION,
+            null);
+    // Saves the event.
+    saveInteraction(interactionEvent);
+  }
+
+  @Test(expected = IOException.class)
+  public void invalidEvent_reactableNotFound() throws Exception {
+    saveScene(scene);
+    emptyDatastore(Reactable.DATASTORE_KIND);
     InteractionEvent interactionEvent =
         new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTABLE_REACTION,
             null);

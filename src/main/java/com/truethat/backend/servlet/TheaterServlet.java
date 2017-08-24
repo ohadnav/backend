@@ -1,8 +1,8 @@
 package com.truethat.backend.servlet;
 
 import com.google.cloud.datastore.Datastore;
-import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Entity;
+import com.google.cloud.datastore.KeyFactory;
 import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.common.annotations.VisibleForTesting;
@@ -15,7 +15,6 @@ import java.util.Comparator;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,16 +26,28 @@ import static java.util.stream.Collectors.toList;
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/TheaterAPI.java</a>
  */
 @WebServlet(value = "/theater", name = "Theater")
-public class TheaterServlet extends HttpServlet {
+public class TheaterServlet extends BaseServlet {
   @VisibleForTesting
   static final int FETCH_LIMIT = 10;
-  private Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
-  private ReactableEnricher enricher = new ReactableEnricher(datastore);
 
-  public TheaterServlet setDatastore(Datastore datastore) {
-    this.datastore = datastore;
-    enricher = new ReactableEnricher(datastore);
-    return this;
+  @SuppressWarnings("RedundantIfStatement")
+  static boolean isValidUser(Datastore datastore, KeyFactory userKeyFactory, User user,
+      StringBuilder errorBuilder) {
+    if (user.getId() == null) {
+      errorBuilder.append("missing user ID.");
+      return false;
+    }
+    if (datastore.get(userKeyFactory.newKey(user.getId())) == null) {
+      errorBuilder.append("user with ID ")
+          .append(user.getId())
+          .append(" not found.");
+      return false;
+    }
+    return true;
+  }
+
+  private static boolean isValidReactable(Reactable reactable) {
+    return reactable.getDirector() != null;
   }
 
   /**
@@ -46,7 +57,11 @@ public class TheaterServlet extends HttpServlet {
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
-    if (user == null) throw new IOException("Missing user");
+    if (user == null) throw new IOException("Missing user.");
+    StringBuilder errorBuilder = new StringBuilder();
+    if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
+      throw new IOException("Invalid user: " + errorBuilder);
+    }
     Query<Entity> queryGt = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
         .setFilter(PropertyFilter.gt(Reactable.DATASTORE_DIRECTOR_ID, user.getId()))
         .build();
@@ -65,6 +80,7 @@ public class TheaterServlet extends HttpServlet {
     reactables.sort(Comparator.comparing(Reactable::getCreated).reversed());
     reactables = reactables.subList(0, Math.min(FETCH_LIMIT, reactables.size()));
     enricher.enrichReactables(reactables, user);
+    reactables = reactables.stream().filter(TheaterServlet::isValidReactable).collect(toList());
     resp.getWriter().print(Util.GSON.toJson(reactables));
   }
 }

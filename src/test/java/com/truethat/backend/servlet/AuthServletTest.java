@@ -5,6 +5,7 @@ import com.google.cloud.datastore.Query;
 import com.google.common.collect.Lists;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.User;
+import java.io.IOException;
 import java.util.List;
 import org.junit.Test;
 
@@ -69,7 +70,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     assertEquals(user, savedUser);
     // Saves the first ID
     User firstUser = Util.GSON.fromJson(responseWriter.toString(), User.class);
-    assertTrue(firstUser.hasId());
+    assertNotNull(firstUser.getId());
     user = new User(DEVICE_ID, FIRST_NAME, LAST_NAME, NOW);
     saveUser(user);
     // Retrieves the all saved users.
@@ -139,5 +140,47 @@ public class AuthServletTest extends BaseServletTestSuite {
     assertEquals(1, savedUsers.size());
     // Assert the saved user matches the updated one.
     assertEquals(defaultUser, savedUsers.get(0));
+  }
+
+  @Test(expected = Exception.class)
+  public void invalidRequest_missingUser() throws Exception {
+    when(mockRequest.getReader()).thenReturn(null);
+    authServlet.doPost(mockRequest, mockResponse);
+  }
+
+  @Test(expected = IOException.class)
+  public void fetchReactables_missingFirstName() throws Exception {
+    defaultUser.setFirstName(null);
+    saveUser(defaultUser);
+  }
+
+  @Test(expected = IOException.class)
+  public void fetchReactables_invalidFirstName_tooShort() throws Exception {
+    defaultUser.setFirstName("a");
+    saveUser(defaultUser);
+  }
+
+  @Test(expected = IOException.class)
+  public void fetchReactables_invalidFirstName_illegalCharacters() throws Exception {
+    defaultUser.setFirstName("aaa5ff");
+    saveUser(defaultUser);
+  }
+
+  @Test(expected = IOException.class)
+  public void fetchReactables_missingLastName() throws Exception {
+    defaultUser.setLastName(null);
+    saveUser(defaultUser);
+  }
+
+  @Test(expected = IOException.class)
+  public void fetchReactables_invalidLastName_tooShort() throws Exception {
+    defaultUser.setLastName("a");
+    saveUser(defaultUser);
+  }
+
+  @Test(expected = IOException.class)
+  public void fetchReactables_invalidLastName_illegalCharacters() throws Exception {
+    defaultUser.setLastName("aaa5ff");
+    saveUser(defaultUser);
   }
 }
