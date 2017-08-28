@@ -15,6 +15,7 @@ import com.truethat.backend.common.Util;
 import com.truethat.backend.model.InteractionEvent;
 import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Short;
 import com.truethat.backend.model.User;
 import com.truethat.backend.storage.LocalStorageClient;
 import com.truethat.backend.storage.LocalUrlSigner;
@@ -66,7 +67,7 @@ public class BaseServletTestSuite {
   private ServletConfig mockServletConfig;
   @Mock
   private ServletContext mockServletContext;
-  @Mock private Part mockImagePart;
+  @Mock private Part mockFilePart;
   @Mock private Part mockReactablePart;
 
   @BeforeClass
@@ -137,12 +138,12 @@ public class BaseServletTestSuite {
    * @param reactable to save
    */
   void preparePoseSave(Reactable reactable) throws Exception {
-    File file = new File("src/test/resources/api/1x1_pixel.jpg");
-    when(mockImagePart.getContentType()).thenReturn("image/jpeg");
-    when(mockImagePart.getInputStream()).thenReturn(new FileInputStream(file));
+    File file = new File("src/test/resources/servlet/1x1_pixel.jpg");
+    when(mockFilePart.getContentType()).thenReturn("image/jpeg");
+    when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(file));
     when(mockReactablePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(reactable)));
-    when(mockRequest.getPart(Pose.IMAGE_PART)).thenReturn(mockImagePart);
+    when(mockRequest.getPart(Pose.IMAGE_PART)).thenReturn(mockFilePart);
     when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
   }
 
@@ -159,7 +160,38 @@ public class BaseServletTestSuite {
     Pose respondedPose = Util.GSON.fromJson(responseWriter.toString(), Pose.class);
     pose.setId(respondedPose.getId());
     pose.setCreated(respondedPose.getCreated());
-    pose.setImageSignedUrl(respondedPose.getImageSignedUrl());
+    pose.setImageUrl(respondedPose.getImageUrl());
+  }
+
+  /**
+   * Saves a short to datastore and updates {@code toSave} id.
+   *
+   * @param toSave to save
+   */
+  void saveShort(Short toSave) throws Exception {
+    resetResponseMock();
+    prepareShortSave(toSave);
+    studioServlet.doPost(mockRequest, mockResponse);
+    // Updates the pose id.
+    Short respondedPose = Util.GSON.fromJson(responseWriter.toString(), Short.class);
+    toSave.setId(respondedPose.getId());
+    toSave.setCreated(respondedPose.getCreated());
+    toSave.setVideoUrl(respondedPose.getVideoUrl());
+  }
+
+  /**
+   * Prepares request and response mocks for {@link #saveShort(Short)}.
+   *
+   * @param reactable to save
+   */
+  private void prepareShortSave(Reactable reactable) throws Exception {
+    File file = new File("src/test/resources/servlet/wink.mp4");
+    when(mockFilePart.getContentType()).thenReturn("video/mp4");
+    when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(file));
+    when(mockReactablePart.getInputStream()).thenReturn(
+        TestUtil.toInputStream(Util.GSON.toJson(reactable)));
+    when(mockRequest.getPart(Short.VIDEO_PART)).thenReturn(mockFilePart);
+    when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
   }
 
   /**

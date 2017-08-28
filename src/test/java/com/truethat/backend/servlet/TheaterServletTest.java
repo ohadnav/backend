@@ -5,7 +5,9 @@ import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Short;
 import com.truethat.backend.model.User;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
@@ -23,6 +25,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
   private User director =
       new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
   private Pose pose;
+  private Short aShort;
   private TheaterServlet theaterServlet;
 
   @Override public void setUp() throws Exception {
@@ -32,6 +35,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
     saveUser(director);
     saveUser(defaultUser);
     pose = new Pose(director, NOW, null);
+    aShort = new Short(director, NOW, null);
   }
 
   @Test
@@ -49,6 +53,25 @@ public class TheaterServletTest extends BaseServletTestSuite {
     // Enriches pose
     enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
     assertEquals(pose, respondedReactables.get(0));
+  }
+
+  @Test
+  public void fetchMultipleTypes() throws Exception {
+    prepareFetch();
+    savePose(pose);
+    saveShort(aShort);
+    resetResponseMock();
+    // Sends the GET request
+    theaterServlet.doPost(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertEquals(2, respondedReactables.size());
+    // Enriches reactables
+    enricher.enrichReactables(Arrays.asList(pose, aShort), defaultUser);
+    assertEquals(pose, respondedReactables.get(0));
+    assertEquals(aShort, respondedReactables.get(1));
   }
 
   @Test
@@ -132,7 +155,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
       Pose pose = (Pose) respondedReactables.get(i);
       assertEquals(recentTimestamp - i, pose.getCreated().getSeconds());
       // Should have image url
-      assertNotNull(pose.getImageSignedUrl());
+      assertNotNull(pose.getImageUrl());
     }
   }
 

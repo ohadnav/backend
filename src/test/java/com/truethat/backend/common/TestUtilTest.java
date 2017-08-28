@@ -34,14 +34,17 @@ public class TestUtilTest {
 
   @Test
   public void assertInputStreamsEqual_files() throws Exception {
-    FileInputStream file1 = new FileInputStream(new File("src/test/resources/api/1x1_pixel.jpg"));
-    FileInputStream file2 = new FileInputStream(new File("src/test/resources/api/1x1_pixel.jpg"));
+    FileInputStream file1 =
+        new FileInputStream(new File("src/test/resources/servlet/1x1_pixel.jpg"));
+    FileInputStream file2 =
+        new FileInputStream(new File("src/test/resources/servlet/1x1_pixel.jpg"));
     TestUtil.assertInputStreamsEqual(file1, file2);
   }
 
   @Test(expected = AssertionError.class)
   public void assertInputStreamsNotEqual_files() throws Exception {
-    FileInputStream file1 = new FileInputStream(new File("src/test/resources/api/1x1_pixel.jpg"));
+    FileInputStream file1 =
+        new FileInputStream(new File("src/test/resources/servlet/1x1_pixel.jpg"));
     File tempFile = File.createTempFile("name", "txt");
     tempFile.deleteOnExit();
     FileInputStream file2 = new FileInputStream(tempFile);

@@ -9,6 +9,7 @@ import com.truethat.backend.external.GsonUTCDateAdapter;
 import com.truethat.backend.external.RuntimeTypeAdapterFactory;
 import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Short;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,7 +23,9 @@ public class Util {
       new GsonBuilder()
           .registerTypeAdapter(Timestamp.class, new GsonUTCDateAdapter())
           .registerTypeAdapterFactory(
-              RuntimeTypeAdapterFactory.of(Reactable.class).registerSubtype(Pose.class))
+              RuntimeTypeAdapterFactory.of(Reactable.class)
+                  .registerSubtype(Pose.class)
+                  .registerSubtype(Short.class))
           .create();
 
   public static String inputStreamToString(InputStream inputStream) throws IOException {

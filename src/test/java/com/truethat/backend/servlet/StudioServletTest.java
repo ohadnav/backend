@@ -3,6 +3,7 @@ package com.truethat.backend.servlet;
 import com.google.cloud.datastore.Query;
 import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Short;
 import javax.servlet.ServletException;
 import org.junit.Test;
 
@@ -14,11 +15,13 @@ import static org.mockito.Mockito.when;
  */
 public class StudioServletTest extends BaseServletTestSuite {
   private Pose pose;
+  private Short aShort;
 
   @Override public void setUp() throws Exception {
     super.setUp();
     saveUser(defaultUser);
     pose = new Pose(defaultUser, NOW, null);
+    aShort = new Short(defaultUser, NOW, null);
   }
 
   @Test
@@ -30,6 +33,17 @@ public class StudioServletTest extends BaseServletTestSuite {
     pose.setDirector(null);
     pose.setDirectorId(defaultUser.getId());
     assertEquals(pose, savedPose);
+  }
+
+  @Test
+  public void shortSaved() throws Exception {
+    saveShort(aShort);
+    Short savedShort = (Short) Reactable.fromEntity(
+        datastore.run(Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND).build())
+            .next());
+    aShort.setDirector(null);
+    aShort.setDirectorId(defaultUser.getId());
+    assertEquals(aShort, savedShort);
   }
 
   @Test(expected = ServletException.class)

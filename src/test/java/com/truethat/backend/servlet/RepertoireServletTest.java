@@ -86,7 +86,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
       Pose pose = (Pose) respondedReactables.get(i);
       assertEquals(recentTimestamp - i, pose.getCreated().getSeconds());
       // Should have image url
-      assertNotNull(pose.getImageSignedUrl());
+      assertNotNull(pose.getImageUrl());
     }
   }
 

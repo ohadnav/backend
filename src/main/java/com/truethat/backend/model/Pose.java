@@ -27,7 +27,7 @@ public class Pose extends Reactable {
   /**
    * Datastore column names.
    */
-  private static final String DATASTORE_IMAGE_SIGNED_URL = "imageSignedUrl";
+  private static final String DATASTORE_IMAGE_URL = "imageUrl";
   /**
    * Sub path for pose images within the storage bucket.
    */
@@ -38,24 +38,24 @@ public class Pose extends Reactable {
   /**
    * Authenticated query string for the pose image, which is stored in Google Storage.
    */
-  private String imageSignedUrl;
+  private String imageUrl;
 
   Pose(Entity entity) {
     super(entity);
-    if (entity.contains(DATASTORE_IMAGE_SIGNED_URL)) {
-      imageSignedUrl = entity.getString(DATASTORE_IMAGE_SIGNED_URL);
+    if (entity.contains(DATASTORE_IMAGE_URL)) {
+      imageUrl = entity.getString(DATASTORE_IMAGE_URL);
     }
   }
 
-  @VisibleForTesting public Pose(User director, Timestamp created, String imageSignedUrl) {
+  @VisibleForTesting public Pose(User director, Timestamp created, String imageUrl) {
     super(director, created);
-    this.imageSignedUrl = imageSignedUrl;
+    this.imageUrl = imageUrl;
   }
 
   @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
     FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
-    if (imageSignedUrl != null) {
-      builder.set(DATASTORE_IMAGE_SIGNED_URL, imageSignedUrl);
+    if (imageUrl != null) {
+      builder.set(DATASTORE_IMAGE_URL, imageUrl);
     }
     return builder;
   }
@@ -67,8 +67,8 @@ public class Pose extends Reactable {
 
     Pose pose = (Pose) o;
 
-    return imageSignedUrl != null ? imageSignedUrl.equals(pose.imageSignedUrl)
-        : pose.imageSignedUrl == null;
+    return imageUrl != null ? imageUrl.equals(pose.imageUrl)
+        : pose.imageUrl == null;
   }
 
   @Override void saveMedia(HttpServletRequest req, StudioServlet servlet) throws Exception {
@@ -78,16 +78,16 @@ public class Pose extends Reactable {
         imagePart.getContentType(),
         ByteStreams.toByteArray(imagePart.getInputStream()),
         servlet.getBucketName());
-    imageSignedUrl = servlet.getUrlSigner()
+    imageUrl = servlet.getUrlSigner()
         .sign(servlet.getBucketName() + "/" + getImagePath());
   }
 
-  public String getImageSignedUrl() {
-    return imageSignedUrl;
+  public String getImageUrl() {
+    return imageUrl;
   }
 
-  public void setImageSignedUrl(String imageSignedUrl) {
-    this.imageSignedUrl = imageSignedUrl;
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
   }
 
   /**

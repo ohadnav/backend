@@ -99,6 +99,9 @@ import javax.servlet.http.HttpServletRequest;
     if (Objects.equals(type, Pose.class.getSimpleName())) {
       reactable = new Pose(entity);
     }
+    if (Objects.equals(type, Short.class.getSimpleName())) {
+      reactable = new Short(entity);
+    }
     return reactable;
   }
 
