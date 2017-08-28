@@ -22,7 +22,8 @@ import static java.util.stream.Collectors.toList;
 /**
  * Proudly created by ohad on 03/07/2017.
  *
- * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/RepertoireAPI.java</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/RepertoireApi.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/Network/RepertoireApi.swift</a>
  */
 @WebServlet(value = "/repertoire", name = "Repertoire")
 public class RepertoireServlet extends BaseServlet {

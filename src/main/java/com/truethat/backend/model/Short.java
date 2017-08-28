@@ -16,12 +16,13 @@ import javax.servlet.http.Part;
  * Proudly created by ohad on 08/05/2017.
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Short.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/Short.swift</a>
  */
 public class Short extends Reactable {
   /**
    * Multipart HTTP request part names, as used by {@link com.truethat.backend.servlet.StudioServlet}.
    *
-   * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioAPI.java</a>
+   * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioApi.java</a>
    */
   public static final String VIDEO_PART = "short_video";
   /**

@@ -18,7 +18,8 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Proudly created by ohad on 12/06/2017.
  *
- * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/AuthAPI.java</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/AuthApi.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/Network/AuthApi.swift</a>
  */
 
 @WebServlet(value = "/auth", name = "Auth")

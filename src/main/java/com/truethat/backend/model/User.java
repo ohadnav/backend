@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
  * Proudly created by ohad on 12/06/2017.
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/User.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/User.swift</a>
  */
 @SuppressWarnings("unused") public class User extends BaseModel {
   /**

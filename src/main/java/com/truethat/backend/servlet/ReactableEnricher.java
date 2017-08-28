@@ -15,6 +15,7 @@ import com.truethat.backend.model.User;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.stream.Collectors.collectingAndThen;
@@ -28,12 +29,10 @@ import static java.util.stream.Collectors.toList;
 class ReactableEnricher {
   Datastore datastore;
   private KeyFactory userKeyFactory;
-  private KeyFactory eventKeyFactory;
 
   ReactableEnricher(Datastore datastore) {
     this.datastore = datastore;
     userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
-    eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
   }
 
   /**
@@ -76,7 +75,7 @@ class ReactableEnricher {
    */
   private void enrichEvents(List<Reactable> reactables, User user) {
     for (Reactable reactable : reactables) {
-      boolean isUserDirector = user.getId() == reactable.getDirectorId();
+      boolean isUserDirector = Objects.equals(user.getId(), reactable.getDirectorId());
       Query<Entity> query = Query.newEntityQueryBuilder().setKind(InteractionEvent.DATASTORE_KIND)
           .setFilter(StructuredQuery.PropertyFilter.eq(InteractionEvent.DATASTORE_REACTABLE_ID,
               reactable.getId())).build();
@@ -89,7 +88,7 @@ class ReactableEnricher {
           // Filter for reaction event not of the user.
           .filter(
               interaction -> interaction.getEventType() == EventType.REACTABLE_REACTION
-                  && interaction.getUserId() != reactable.getDirectorId())
+                  && !Objects.equals(interaction.getUserId(), reactable.getDirectorId()))
           // Group by reactions
           .collect(groupingBy(InteractionEvent::getReaction,
               // Group by user IDs, to avoid duplicates
@@ -100,7 +99,7 @@ class ReactableEnricher {
       if (!isUserDirector) {
         // Find a reaction event of user.
         Optional<InteractionEvent> reactionEvent = interactionEvents.stream()
-            .filter(interaction -> interaction.getUserId() == user.getId()
+            .filter(interaction -> Objects.equals(interaction.getUserId(), user.getId())
                 && interaction.getEventType() == EventType.REACTABLE_REACTION)
             .findAny();
         reactionEvent.ifPresent(
@@ -114,7 +113,7 @@ class ReactableEnricher {
       boolean viewed = reactable.isViewed();
       if (!viewed) {
         viewed = interactionEvents.stream()
-            .anyMatch(interaction -> interaction.getUserId() == user.getId()
+            .anyMatch(interaction -> Objects.equals(interaction.getUserId(), user.getId())
                 && interaction.getEventType() == EventType.REACTABLE_VIEW);
       }
       reactable.setViewed(viewed);

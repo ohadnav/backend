@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
  * Proudly created by ohad on 11/06/2017.
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/InteractionEvent.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/InteractionEvent.swift</a>
  */
 @SuppressWarnings("FieldCanBeLocal") public class InteractionEvent extends BaseModel {
   /**

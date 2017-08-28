@@ -27,7 +27,8 @@ import javax.servlet.http.Part;
 /**
  * Proudly created by ohad on 07/05/2017.
  *
- * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioAPI.java</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioApi.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/Network/StudioApi.swift</a>
  */
 
 @WebServlet(value = "/studio", name = "Studio")

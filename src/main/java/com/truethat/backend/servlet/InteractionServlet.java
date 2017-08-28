@@ -12,7 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Proudly created by ohad on 03/07/2017.
  *
- * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/InteractionAPI.java</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/InteractionApi.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/Network/InteractionApi.swift</a>
  */
 @WebServlet(value = "/interaction", name = "InteractionEvent")
 public class InteractionServlet extends BaseServlet {

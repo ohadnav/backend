@@ -20,13 +20,14 @@ import javax.servlet.http.HttpServletRequest;
  * Each implementation should register at {@link Util#GSON}.
  *
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Reactable.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/Reactable.swift</a>
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal"}) public abstract class Reactable extends BaseModel {
   /**
    * Multipart HTTP request part names, as used by backend endpoints such as {@link
    * com.truethat.backend.servlet.StudioServlet}.
    *
-   * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioAPI.java</a>
+   * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/StudioApi.java</a>
    */
   public static final String REACTABLE_PART = "reactable";
   /**

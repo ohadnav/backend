@@ -23,7 +23,8 @@ import static java.util.stream.Collectors.toList;
 /**
  * Proudly created by ohad on 01/06/2017.
  *
- * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/TheaterAPI.java</a>
+ * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/common/network/TheaterApi.java</a>
+ * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/Network/TheaterApi.swift</a>
  */
 @WebServlet(value = "/theater", name = "Theater")
 public class TheaterServlet extends BaseServlet {
