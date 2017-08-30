@@ -1,5 +1,6 @@
 package com.truethat.backend.servlet;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.KeyFactory;
@@ -13,6 +14,8 @@ import com.truethat.backend.model.User;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -63,20 +66,15 @@ public class TheaterServlet extends BaseServlet {
     if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
       throw new IOException("Invalid user: " + errorBuilder);
     }
-    Query<Entity> queryGt = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
-        .setFilter(PropertyFilter.gt(Reactable.DATASTORE_DIRECTOR_ID, user.getId()))
+    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
+        .setFilter(PropertyFilter.gt(Reactable.DATASTORE_CREATED, Timestamp.ofTimeSecondsAndNanos(
+            Timestamp.now().getSeconds() - TimeUnit.DAYS.toSeconds(1), 0)))
         .build();
-    Query<Entity> queryLt = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
-        .setFilter(PropertyFilter.lt(Reactable.DATASTORE_DIRECTOR_ID, user.getId()))
-        .build();
-    List<Reactable> reactables = Lists.newArrayList(datastore.run(queryGt))
+    List<Reactable> reactables = Lists.newArrayList(datastore.run(query))
         .stream()
         .map(Reactable::fromEntity)
+        .filter(reactable -> !Objects.equals(reactable.getDirectorId(), user.getId()))
         .collect(toList());
-    reactables.addAll(Lists.newArrayList(datastore.run(queryLt))
-        .stream()
-        .map(Reactable::fromEntity)
-        .collect(toList()));
     // Sort by recency
     reactables.sort(Comparator.comparing(Reactable::getCreated).reversed());
     reactables = reactables.subList(0, Math.min(FETCH_LIMIT, reactables.size()));

@@ -37,7 +37,7 @@ import javax.servlet.http.HttpServletRequest;
   /**
    * Datastore column names.
    */
-  private static final String DATASTORE_CREATED = "created";
+  public static final String DATASTORE_CREATED = "created";
   public static final String DATASTORE_DIRECTOR_ID = "directorId";
   private static final String DATASTORE_TYPE = "type";
   /**

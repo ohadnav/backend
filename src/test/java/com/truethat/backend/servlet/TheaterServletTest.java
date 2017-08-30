@@ -56,6 +56,36 @@ public class TheaterServletTest extends BaseServletTestSuite {
   }
 
   @Test
+  public void timeLimitFilter() throws Exception {
+    prepareFetch();
+    pose.setCreated(Timestamp.ofTimeSecondsAndNanos(Timestamp.now().getSeconds() - 86400 - 1, 0));
+    savePose(pose);
+    resetResponseMock();
+    // Sends the GET request
+    theaterServlet.doPost(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertEquals(0, respondedReactables.size());
+  }
+
+  @Test
+  public void sameUserFilter() throws Exception {
+    prepareFetch();
+    pose.setDirector(defaultUser);
+    savePose(pose);
+    resetResponseMock();
+    // Sends the GET request
+    theaterServlet.doPost(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertEquals(0, respondedReactables.size());
+  }
+
+  @Test
   public void fetchMultipleTypes() throws Exception {
     prepareFetch();
     savePose(pose);

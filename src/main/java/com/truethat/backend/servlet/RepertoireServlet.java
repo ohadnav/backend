@@ -1,5 +1,6 @@
 package com.truethat.backend.servlet;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.StructuredQuery;
@@ -11,6 +12,7 @@ import com.truethat.backend.model.User;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -49,6 +51,8 @@ public class RepertoireServlet extends BaseServlet {
     List<Reactable> reactables = Lists.newArrayList(datastore.run(query))
         .stream()
         .map(Reactable::fromEntity)
+        .filter(reactable -> Timestamp.now().getSeconds() - reactable.getCreated().getSeconds()
+            < TimeUnit.DAYS.toSeconds(1))
         .collect(toList());
     reactables.sort(Comparator.comparing(Reactable::getCreated).reversed());
     reactables = reactables.subList(0, Math.min(FETCH_LIMIT, reactables.size()));

@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.User;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
@@ -20,6 +21,8 @@ import static org.mockito.Mockito.when;
 public class RepertoireServletTest extends BaseServletTestSuite {
   private Pose pose;
   private RepertoireServlet repertoireServlet;
+  private User otherUser =
+      new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
 
   @Override public void setUp() throws Exception {
     super.setUp();
@@ -57,6 +60,37 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     // Enriches pose.
     enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
     assertEquals(pose, respondedReactables.get(0));
+  }
+
+  @Test
+  public void distinctDirectorFilter() throws Exception {
+    saveUser(otherUser);
+    // Add a pose from a different director
+    pose.setDirector(otherUser);
+    savePose(pose);
+    // Sends the GET request
+    prepareFetch();
+    repertoireServlet.doPost(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertEquals(0, respondedReactables.size());
+  }
+
+  @Test
+  public void recencyFilter() throws Exception {
+    // Add a pose from an old timestamp
+    pose.setCreated(Timestamp.ofTimeSecondsAndNanos(Timestamp.now().getSeconds() - 86400 - 1, 0));
+    savePose(pose);
+    // Sends the GET request
+    prepareFetch();
+    repertoireServlet.doPost(mockRequest, mockResponse);
+    String response = responseWriter.toString();
+    List<Reactable> respondedReactables =
+        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+        }.getType());
+    assertEquals(0, respondedReactables.size());
   }
 
   @SuppressWarnings("Duplicates") @Test
