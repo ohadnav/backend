@@ -42,7 +42,9 @@ public class RepertoireServlet extends BaseServlet {
     if (user == null) throw new IOException("Missing user");
     StringBuilder errorBuilder = new StringBuilder();
     if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
-      throw new IOException("Invalid user: " + errorBuilder + " in " + user);
+      throw new IOException(
+          "Invalid user: " + errorBuilder + ", input: " + Util.inputStreamToString(
+              req.getInputStream()));
     }
     Query<Entity> query = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
         .setFilter(StructuredQuery.PropertyFilter.eq(Reactable.DATASTORE_DIRECTOR_ID, user.getId()))

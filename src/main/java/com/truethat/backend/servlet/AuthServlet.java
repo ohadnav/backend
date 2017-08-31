@@ -45,7 +45,9 @@ public class AuthServlet extends BaseServlet {
         // Validate input.
         StringBuilder errorBuilder = new StringBuilder();
         if (!isValidUser(user, errorBuilder)) {
-          throw new IOException("Invalid user: " + errorBuilder + " in " + user);
+          throw new IOException(
+              "Invalid user: " + errorBuilder + ", input: " + Util.inputStreamToString(
+                  req.getInputStream()));
         }
         // Put a new entity in datastore.
         respondedUser = new User(datastore.add(userEntity));

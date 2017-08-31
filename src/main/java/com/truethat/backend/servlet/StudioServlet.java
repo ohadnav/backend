@@ -112,7 +112,9 @@ public class StudioServlet extends BaseServlet {
               Reactable.class);
       StringBuilder errorBuilder = new StringBuilder();
       if (!isValidReactable(reactable, errorBuilder)) {
-        throw new IOException("Reactable is invalid: " + errorBuilder + " in " + reactable);
+        throw new IOException(
+            "Reactable is invalid: " + errorBuilder + ", input: " + Util.inputStreamToString(
+                reactablePart.getInputStream()));
       }
       reactable.save(req, this);
       resp.getWriter().print(Util.GSON.toJson(reactable));

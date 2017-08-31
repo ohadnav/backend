@@ -30,6 +30,15 @@ public class UtilTest {
     assertEquals(s, Util.inputStreamToString(stream));
   }
 
+  @Test
+  public void inputStreamToString_streamNotReset() throws Exception {
+    final String s = "my name is indigo montoya";
+    InputStream stream = new ByteArrayInputStream(s.getBytes());
+    //noinspection ResultOfMethodCallIgnored
+    stream.read();
+    assertEquals(s, Util.inputStreamToString(stream));
+  }
+
   @Test public void timestampToDate() throws Exception {
     long timestamp = new Date().getTime();
     assertEquals(new Date(timestamp), Util.timestampToDate(Timestamp.of(new Date(timestamp))));

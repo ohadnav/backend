@@ -28,7 +28,15 @@ public class Util {
                   .registerSubtype(Short.class))
           .create();
 
+  /**
+   * Resets input stream and reads it.
+   *
+   * @param inputStream to read
+   *
+   * @return the string representation of {@code inputStream}
+   */
   public static String inputStreamToString(InputStream inputStream) throws IOException {
+    inputStream.reset();
     return CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
   }
 
