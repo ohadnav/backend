@@ -107,15 +107,15 @@ public class StudioServlet extends BaseServlet {
     try {
       Part reactablePart = req.getPart(Reactable.REACTABLE_PART);
       if (reactablePart == null) throw new IOException("Missing reactable, how dare you?");
-      Reactable toSave =
+      Reactable reactable =
           Util.GSON.fromJson(new InputStreamReader(reactablePart.getInputStream()),
               Reactable.class);
       StringBuilder errorBuilder = new StringBuilder();
-      if (!isValidReactable(toSave, errorBuilder)) {
-        throw new IOException("Reactable is invalid: " + errorBuilder);
+      if (!isValidReactable(reactable, errorBuilder)) {
+        throw new IOException("Reactable is invalid: " + errorBuilder + " in " + reactable);
       }
-      toSave.save(req, this);
-      resp.getWriter().print(Util.GSON.toJson(toSave));
+      reactable.save(req, this);
+      resp.getWriter().print(Util.GSON.toJson(reactable));
     } catch (Exception e) {
       e.printStackTrace();
       resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());

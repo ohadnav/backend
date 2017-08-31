@@ -27,7 +27,8 @@ public class InteractionServlet extends BaseServlet {
     if (interactionEvent == null) throw new IOException("Missing interaction event");
     StringBuilder errorBuilder = new StringBuilder();
     if (!isEventValid(interactionEvent, errorBuilder)) {
-      throw new IOException("Invalid interaction event: " + errorBuilder);
+      throw new IOException(
+          "Invalid interaction event: " + errorBuilder + " in " + interactionEvent);
     }
     // Puts the event in the datastore and responds it to the client.
     resp.getWriter()

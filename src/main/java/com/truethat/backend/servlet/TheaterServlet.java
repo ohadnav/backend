@@ -64,7 +64,7 @@ public class TheaterServlet extends BaseServlet {
     if (user == null) throw new IOException("Missing user.");
     StringBuilder errorBuilder = new StringBuilder();
     if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
-      throw new IOException("Invalid user: " + errorBuilder);
+      throw new IOException("Invalid user: " + errorBuilder + " in " + user);
     }
     Query<Entity> query = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
         .setFilter(PropertyFilter.gt(Reactable.DATASTORE_CREATED, Timestamp.ofTimeSecondsAndNanos(
