@@ -5,6 +5,7 @@ import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
 import com.google.cloud.datastore.KeyFactory;
+import com.google.cloud.storage.BlobInfo;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import com.truethat.backend.servlet.StudioServlet;
@@ -75,12 +76,12 @@ public class Pose extends Reactable {
   @Override void saveMedia(HttpServletRequest req, StudioServlet servlet) throws Exception {
     Part imagePart = req.getPart(IMAGE_PART);
     if (imagePart == null) throw new IOException("Missing pose image, are you being shy?");
-    servlet.getStorageClient().save(getImagePath(),
+    String imagePath = getImagePath();
+    BlobInfo blobInfo = servlet.getStorageClient().save(imagePath,
         imagePart.getContentType(),
         ByteStreams.toByteArray(imagePart.getInputStream()),
         servlet.getBucketName());
-    imageUrl = servlet.getUrlSigner()
-        .sign(servlet.getBucketName() + "/" + getImagePath());
+    imageUrl = blobInfo.getMediaLink();
   }
 
   public String getImageUrl() {
@@ -98,7 +99,7 @@ public class Pose extends Reactable {
     return STORAGE_IMAGES_PATH
         + getDirectorId()
         + "/"
-        + getCreated().getSeconds()
+        + Math.round(Math.random() * 1000000000)
         + "."
         + DEFAULT_IMAGE_TYPE;
   }

@@ -5,6 +5,7 @@ import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
 import com.google.cloud.datastore.KeyFactory;
+import com.google.cloud.storage.BlobInfo;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import com.truethat.backend.servlet.StudioServlet;
@@ -72,12 +73,12 @@ public class Short extends Reactable {
   @Override void saveMedia(HttpServletRequest req, StudioServlet servlet) throws Exception {
     Part videoPart = req.getPart(VIDEO_PART);
     if (videoPart == null) throw new IOException("Missing short video, are you being shy?");
-    servlet.getStorageClient().save(getVideoPath(videoPart.getContentType()),
+    String videoPath = getVideoPath(videoPart.getContentType());
+    BlobInfo blobInfo = servlet.getStorageClient().save(videoPath,
         videoPart.getContentType(),
         ByteStreams.toByteArray(videoPart.getInputStream()),
         servlet.getBucketName());
-    videoUrl = servlet.getUrlSigner()
-        .sign(servlet.getBucketName() + "/" + getVideoPath(videoPart.getContentType()));
+    videoUrl = blobInfo.getMediaLink();
   }
 
   public String getVideoUrl() {

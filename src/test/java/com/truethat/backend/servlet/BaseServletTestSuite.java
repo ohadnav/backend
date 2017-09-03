@@ -18,7 +18,6 @@ import com.truethat.backend.model.Reactable;
 import com.truethat.backend.model.Short;
 import com.truethat.backend.model.User;
 import com.truethat.backend.storage.LocalStorageClient;
-import com.truethat.backend.storage.LocalUrlSigner;
 import com.truethat.backend.storage.StorageClient;
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,8 +25,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.concurrent.TimeoutException;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -63,10 +60,6 @@ public class BaseServletTestSuite {
   AuthServlet authServlet;
   private InteractionServlet interactionServlet;
   ReactableEnricher enricher;
-  @Mock
-  private ServletConfig mockServletConfig;
-  @Mock
-  private ServletContext mockServletContext;
   @Mock private Part mockFilePart;
   @Mock private Part mockReactablePart;
 
@@ -95,17 +88,10 @@ public class BaseServletTestSuite {
     interactionServlet.setDatastore(datastore);
     authServlet = new AuthServlet();
     authServlet.setDatastore(datastore);
-    // Initialize Studio servlet
-    when(mockServletContext.getResourceAsStream(
-        StudioServlet.CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json"))
-        .thenReturn(new FileInputStream(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")));
-    when(mockServletConfig.getServletContext()).thenReturn(mockServletContext);
     studioServlet = new StudioServlet();
     studioServlet.setDatastore(datastore);
-    studioServlet.init(mockServletConfig);
     enricher = new ReactableEnricher(datastore);
     // Setting up local services.
-    studioServlet.setUrlSigner(new LocalUrlSigner());
     StorageClient storageClient = new LocalStorageClient();
     storageClient.addBucket(studioServlet.getBucketName());
     studioServlet.setStorageClient(storageClient);

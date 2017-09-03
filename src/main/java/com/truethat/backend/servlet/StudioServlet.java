@@ -1,18 +1,12 @@
 package com.truethat.backend.servlet;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Pose;
 import com.truethat.backend.model.Reactable;
 import com.truethat.backend.storage.DefaultStorageClient;
-import com.truethat.backend.storage.DefaultUrlSigner;
 import com.truethat.backend.storage.StorageClient;
-import com.truethat.backend.storage.UrlSigner;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.logging.Logger;
@@ -34,11 +28,8 @@ import javax.servlet.http.Part;
 @WebServlet(value = "/studio", name = "Studio")
 @MultipartConfig
 public class StudioServlet extends BaseServlet {
-  @VisibleForTesting
-  static final String CREDENTIALS_PATH = "credentials/";
   private static final Logger LOG = Logger.getLogger(StudioServlet.class.getName());
   private StorageClient storageClient;
-  private UrlSigner urlSigner;
   private String bucketName = System.getenv("STUDIO_BUCKET");
 
   public String getBucketName() {
@@ -54,37 +45,14 @@ public class StudioServlet extends BaseServlet {
     return storageClient;
   }
 
-  public UrlSigner getUrlSigner() {
-    return urlSigner;
-  }
-
-  void setUrlSigner(UrlSigner urlSigner) {
-    this.urlSigner = urlSigner;
-  }
-
   @Override
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
-    // Reads credentials file.
-    InputStream credentialsStream = Thread.currentThread().getContextClassLoader()
-        .getResourceAsStream(CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json");
-    try {
-      String credentialsString = Util.inputStreamToString(credentialsStream);
-      JsonObject credentials =
-          new GsonBuilder().create()
-              .fromJson(credentialsString, JsonElement.class)
-              .getAsJsonObject();
-      urlSigner = new DefaultUrlSigner(credentials.get("private_key").getAsString());
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new ServletException("Could not initialize URL signer: " + e.getMessage());
-    }
     // Initializes storage client
     try {
       storageClient = new DefaultStorageClient();
     } catch (IOException | GeneralSecurityException e) {
       e.printStackTrace();
-      LOG.severe("Could not initialize storage client: " + e.getMessage());
       throw new ServletException("Could not initialize storage client: " + e.getMessage());
     }
   }
@@ -113,8 +81,7 @@ public class StudioServlet extends BaseServlet {
       StringBuilder errorBuilder = new StringBuilder();
       if (!isValidReactable(reactable, errorBuilder)) {
         throw new IOException(
-            "Reactable is invalid: " + errorBuilder + ", input: " + Util.inputStreamToString(
-                reactablePart.getInputStream()));
+            "Reactable is invalid: " + errorBuilder + ", input: " + reactable);
       }
       reactable.save(req, this);
       resp.getWriter().print(Util.GSON.toJson(reactable));

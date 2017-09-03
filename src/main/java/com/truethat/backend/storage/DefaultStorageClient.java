@@ -25,7 +25,7 @@ public class DefaultStorageClient implements StorageClient {
       String bucketName) throws IOException, GeneralSecurityException {
     return storage.create(
         BlobInfo.newBuilder(bucketName, destinationName).setContentType(contentType).build(),
-        bytes);
+        bytes, Storage.BlobTargetOption.predefinedAcl(Storage.PredefinedAcl.PUBLIC_READ));
   }
 
   Storage getStorage() {

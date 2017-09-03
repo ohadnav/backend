@@ -30,6 +30,7 @@ public class LocalStorageClient implements StorageClient {
     }
     BlobInfo blobInfo = mock(BlobInfo.class);
     when(blobInfo.getName()).thenReturn(destinationName);
+    when(blobInfo.getMediaLink()).thenReturn(destinationName);
     return blobInfo;
   }
 }

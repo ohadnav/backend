@@ -20,7 +20,6 @@ import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.util.concurrent.TimeoutException;
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
@@ -44,8 +43,6 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
 
   @Mock
   private ServletConfig mockServletConfig;
-  @Mock
-  private ServletContext mockServletContext;
   @Mock
   private HttpServletRequest mockRequest;
   @Mock
@@ -82,11 +79,6 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     authServlet = new AuthServlet();
     studioServlet.setDatastore(datastore);
     authServlet.setDatastore(datastore);
-    // Setting mock server context.
-    when(mockServletContext.getResourceAsStream(
-        StudioServlet.CREDENTIALS_PATH + System.getenv("__GCLOUD_PROJECT__") + ".json"))
-        .thenReturn(new FileInputStream(System.getenv("GOOGLE_APPLICATION_CREDENTIALS")));
-    when(mockServletConfig.getServletContext()).thenReturn(mockServletContext);
     studioServlet.init(mockServletConfig);
     studioServlet.setBucketName(bucketName);
     director = new User("my-iphone", "taylor", "swift", Timestamp.now());
