@@ -98,7 +98,7 @@ public class Short extends Reactable {
     return STORAGE_VIDEOS_PATH
         + getDirectorId()
         + "/"
-        + getCreated().getSeconds()
+        + Math.round(Math.random() * 1000000000)
         + "."
         + fileType;
   }
