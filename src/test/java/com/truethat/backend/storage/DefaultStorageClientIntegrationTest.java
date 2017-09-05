@@ -1,6 +1,5 @@
 package com.truethat.backend.storage;
 
-import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobInfo;
 import com.google.common.io.ByteStreams;
 import com.truethat.backend.common.TestUtil;
@@ -33,12 +32,11 @@ public class DefaultStorageClientIntegrationTest extends BaseStorageTestSuite {
     BlobInfo uploaded = storage.save(
         FILENAME, CONTENT_TYPE, ByteStreams.toByteArray(new FileInputStream(tempFile)), bucketName);
     // Asserts that file exists
-    Blob blob = bucket.get(uploaded.getName());
-    assertEquals(FILENAME, blob.getName());
-    assertEquals(CONTENT_TYPE, blob.getContentType());
-    assertEquals(bucketName, blob.getBucket());
+    assertEquals(FILENAME, uploaded.getName());
+    assertEquals(CONTENT_TYPE, uploaded.getContentType());
+    assertEquals(bucketName, uploaded.getBucket());
     // File should be available
-    TestUtil.assertUrl(blob.getMediaLink(), HttpURLConnection.HTTP_OK,
+    TestUtil.assertUrl(storage.getPublicLink(uploaded), HttpURLConnection.HTTP_OK,
         new FileInputStream(tempFile));
   }
 }

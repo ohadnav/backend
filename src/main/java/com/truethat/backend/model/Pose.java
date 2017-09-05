@@ -81,7 +81,7 @@ public class Pose extends Reactable {
         imagePart.getContentType(),
         ByteStreams.toByteArray(imagePart.getInputStream()),
         servlet.getBucketName());
-    imageUrl = blobInfo.getMediaLink();
+    imageUrl = servlet.getStorageClient().getPublicLink(blobInfo);
   }
 
   public String getImageUrl() {

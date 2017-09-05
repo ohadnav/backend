@@ -8,6 +8,11 @@ import java.security.GeneralSecurityException;
  * Proudly created by ohad on 28/06/2017.
  */
 public interface StorageClient {
+  /**
+   * Base google storage URL for public data.
+   */
+  String STORAGE_BASE_URL = "https://storage.googleapis.com/";
+
   void addBucket(String bucketName) throws IOException;
 
   /**
@@ -23,4 +28,11 @@ public interface StorageClient {
   BlobInfo save(String destinationName, String contentType, byte[] bytes, String bucketName)
       throws IOException,
       GeneralSecurityException;
+
+  /**
+   * @param blobInfo of a storage item.
+   *
+   * @return the public link from which endpoint clients access the storage item.
+   */
+  String getPublicLink(BlobInfo blobInfo);
 }

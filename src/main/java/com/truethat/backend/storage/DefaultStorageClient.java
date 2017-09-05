@@ -28,6 +28,10 @@ public class DefaultStorageClient implements StorageClient {
         bytes, Storage.BlobTargetOption.predefinedAcl(Storage.PredefinedAcl.PUBLIC_READ));
   }
 
+  @Override public String getPublicLink(BlobInfo blobInfo) {
+    return STORAGE_BASE_URL + blobInfo.getBucket() + "/" + blobInfo.getName();
+  }
+
   Storage getStorage() {
     return storage;
   }

@@ -78,7 +78,7 @@ public class Short extends Reactable {
         videoPart.getContentType(),
         ByteStreams.toByteArray(videoPart.getInputStream()),
         servlet.getBucketName());
-    videoUrl = blobInfo.getMediaLink();
+    videoUrl = servlet.getStorageClient().getPublicLink(blobInfo);
   }
 
   public String getVideoUrl() {
