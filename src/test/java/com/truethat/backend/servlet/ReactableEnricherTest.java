@@ -45,7 +45,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
 
   @Test public void enrichReactable_reaction() throws Exception {
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTION,
             REACTION);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -59,12 +59,12 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
   @Test public void enrichReactable_multipleReactions() throws Exception {
     // Saves a happy reaction.
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTION,
             HAPPY);
     saveInteraction(interactionEvent);
     // Saves a sad reaction.
     interactionEvent =
-        new InteractionEvent(friend.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(friend.getId(), pose.getId(), NOW, EventType.REACTION,
             SAD);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -77,12 +77,12 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
   @Test public void enrichReactable_multipleUsers() throws Exception {
     // Saves a happy reaction.
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTION,
             HAPPY);
     saveInteraction(interactionEvent);
     // Saves a sad reaction.
     interactionEvent =
-        new InteractionEvent(friend.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(friend.getId(), pose.getId(), NOW, EventType.REACTION,
             HAPPY);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -93,7 +93,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
 
   @Test public void enrichReactable_reactionUniqueIds() throws Exception {
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTION,
             REACTION);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -107,7 +107,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
 
   @Test public void enrichReactable_view() throws Exception {
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_VIEW,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.VIEW,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -118,7 +118,7 @@ public class ReactableEnricherTest extends BaseServletTestSuite {
 
   @Test public void enrichReactable_userIsDirector() throws Exception {
     InteractionEvent interactionEvent =
-        new InteractionEvent(director.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(director.getId(), pose.getId(), NOW, EventType.REACTION,
             REACTION);
     // Saves the event.
     saveInteraction(interactionEvent);

@@ -39,9 +39,9 @@ import javax.annotation.Nullable;
   private Long userId;
 
   /**
-   * For {@link EventType#REACTABLE_REACTION}.
+   * For {@link EventType#REACTION}.
    * <p>
-   * Must be null for irrelevant events (such as {@link EventType#REACTABLE_VIEW}).
+   * Must be null for irrelevant events (such as {@link EventType#VIEW}).
    */
   private Emotion reaction;
 

@@ -30,7 +30,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
   public void doPost_viewEvent() throws Exception {
     savePose(pose);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_VIEW,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.VIEW,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -43,7 +43,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
   public void doPost_reactionEvent() throws Exception {
     savePose(pose);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTION,
             Emotion.HAPPY);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -56,7 +56,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
   public void invalidEvent_viewWithReaction() throws Exception {
     savePose(pose);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_VIEW,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.VIEW,
             Emotion.HAPPY);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -66,7 +66,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
   public void invalidEvent_reactionWitouthReaction() throws Exception {
     savePose(pose);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTION,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -76,7 +76,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
   public void invalidEvent_missingUserId() throws Exception {
     savePose(pose);
     InteractionEvent interactionEvent =
-        new InteractionEvent(null, pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(null, pose.getId(), NOW, EventType.REACTION,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -87,7 +87,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
     savePose(pose);
     emptyDatastore(User.DATASTORE_KIND);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTION,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -97,7 +97,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
   public void invalidEvent_missingTimestamp() throws Exception {
     savePose(pose);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), null, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), null, EventType.REACTION,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -107,7 +107,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
   public void invalidEvent_missingReactableId() throws Exception {
     savePose(pose);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), null, NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), null, NOW, EventType.REACTION,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -118,7 +118,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
     savePose(pose);
     emptyDatastore(Reactable.DATASTORE_KIND);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTABLE_REACTION,
+        new InteractionEvent(defaultUser.getId(), pose.getId(), NOW, EventType.REACTION,
             null);
     // Saves the event.
     saveInteraction(interactionEvent);

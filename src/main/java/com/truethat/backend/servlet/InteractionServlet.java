@@ -50,12 +50,12 @@ public class InteractionServlet extends BaseServlet {
       errorBuilder.append("missing event type.");
       return false;
     }
-    if (interactionEvent.getEventType() == EventType.REACTABLE_VIEW
+    if (interactionEvent.getEventType() == EventType.VIEW
         && interactionEvent.getReaction() != null) {
       errorBuilder.append("reaction exists for view event.");
       return false;
     }
-    if (interactionEvent.getEventType() == EventType.REACTABLE_REACTION
+    if (interactionEvent.getEventType() == EventType.REACTION
         && interactionEvent.getReaction() == null) {
       errorBuilder.append("missing reaction for reaction event.");
       return false;

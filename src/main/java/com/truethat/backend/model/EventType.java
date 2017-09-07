@@ -10,12 +10,12 @@ public enum EventType {
   /**
    * User viewed a reactable.
    */
-  REACTABLE_VIEW(1),
+  VIEW(1),
 
   /**
    * User reacted to a reactable.
    */
-  REACTABLE_REACTION(2);
+  REACTION(2);
 
   private int code;
 

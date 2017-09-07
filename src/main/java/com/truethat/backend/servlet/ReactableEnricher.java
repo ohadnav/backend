@@ -87,7 +87,7 @@ class ReactableEnricher {
       Map<Emotion, Long> reactionCounters = interactionEvents.parallelStream()
           // Filter for reaction event not of the user.
           .filter(
-              interaction -> interaction.getEventType() == EventType.REACTABLE_REACTION
+              interaction -> interaction.getEventType() == EventType.REACTION
                   && !Objects.equals(interaction.getUserId(), reactable.getDirectorId()))
           // Group by reactions
           .collect(groupingBy(InteractionEvent::getReaction,
@@ -100,7 +100,7 @@ class ReactableEnricher {
         // Find a reaction event of user.
         Optional<InteractionEvent> reactionEvent = interactionEvents.stream()
             .filter(interaction -> Objects.equals(interaction.getUserId(), user.getId())
-                && interaction.getEventType() == EventType.REACTABLE_REACTION)
+                && interaction.getEventType() == EventType.REACTION)
             .findAny();
         reactionEvent.ifPresent(
             interaction -> reactable.setUserReaction(interaction.getReaction()));
@@ -114,7 +114,7 @@ class ReactableEnricher {
       if (!viewed) {
         viewed = interactionEvents.stream()
             .anyMatch(interaction -> Objects.equals(interaction.getUserId(), user.getId())
-                && interaction.getEventType() == EventType.REACTABLE_VIEW);
+                && interaction.getEventType() == EventType.VIEW);
       }
       reactable.setViewed(viewed);
     }
