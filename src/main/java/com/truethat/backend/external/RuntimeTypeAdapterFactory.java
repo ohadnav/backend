@@ -137,24 +137,24 @@ import javax.annotation.Nullable;
   }
 
   /**
-   * Creates a new runtime type adapter using for {@code baseType} using {@code
-   * typeFieldName} as the type field name. Type field names are case sensitive.
+   * Creates a new runtime type adapter using for {@code baseType} using {@code typeFieldName} as
+   * the type field name. Type field names are case sensitive.
    */
   public static <T> RuntimeTypeAdapterFactory<T> of(Class<T> baseType, String typeFieldName) {
     return new RuntimeTypeAdapterFactory<>(baseType, typeFieldName);
   }
 
   /**
-   * Creates a new runtime type adapter for {@code baseType} using {@code "type"} as
-   * the type field name.
+   * Creates a new runtime type adapter for {@code baseType} using {@code "type"} as the type field
+   * name.
    */
   public static <T> RuntimeTypeAdapterFactory<T> of(Class<T> baseType) {
     return new RuntimeTypeAdapterFactory<>(baseType, TYPE_FIELD_NAME);
   }
 
   /**
-   * Registers {@code type} identified by its {@link Class#getSimpleName simple
-   * name}. Labels are case sensitive.
+   * Registers {@code type} identified by its {@link Class#getSimpleName simple name}. Labels are
+   * case sensitive.
    *
    * @throws IllegalArgumentException if either {@code type} or its simple name have already been
    *                                  registered on this type adapter.
@@ -164,8 +164,7 @@ import javax.annotation.Nullable;
   }
 
   /**
-   * Registers {@code type} identified by {@code label}. Labels are case
-   * sensitive.
+   * Registers {@code type} identified by {@code label}. Labels are case sensitive.
    *
    * @throws IllegalArgumentException if either {@code type} or {@code label} have already been
    *                                  registered on this type adapter.
@@ -183,7 +182,8 @@ import javax.annotation.Nullable;
   }
 
   /**
-   * This method was modified, to include {@link #typeFieldName} in serialized registered sub types.
+   * This method was modified, to include {@link #typeFieldName} in serialized registered sub
+   * types.
    */
   @Nullable public <R> TypeAdapter<R> create(Gson gson, TypeToken<R> type) {
     if (type.getRawType() != baseType && !labelToSubtype.containsKey(

@@ -1,7 +1,6 @@
 package com.truethat.backend.model;
 
 import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
 import com.google.cloud.datastore.KeyFactory;
@@ -44,7 +43,7 @@ import javax.annotation.Nullable;
    */
   private String lastName;
 
-  public User(Entity entity) {
+  public User(FullEntity entity) {
     super(entity);
     if (entity.contains(DATASTORE_FIRST_NAME)) {
       firstName = entity.getString(DATASTORE_FIRST_NAME);
@@ -58,7 +57,6 @@ import javax.annotation.Nullable;
     if (entity.contains(DATASTORE_JOINED)) {
       joined = entity.getTimestamp(DATASTORE_JOINED);
     }
-
   }
 
   @VisibleForTesting public User(@Nullable String deviceId,
@@ -82,6 +80,21 @@ import javax.annotation.Nullable;
     }
     builder.set(DATASTORE_JOINED, joined != null ? joined : Timestamp.now());
     return builder;
+  }
+
+  @SuppressWarnings("SimplifiableIfStatement") @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof User)) return false;
+
+    User user = (User) o;
+
+    if (joined != null ? !joined.equals(user.joined) : user.joined != null) return false;
+    if (deviceId != null ? !deviceId.equals(user.deviceId) : user.deviceId != null) return false;
+    if (firstName != null ? !firstName.equals(user.firstName) : user.firstName != null) {
+      return false;
+    }
+    if (lastName != null ? !lastName.equals(user.lastName) : user.lastName != null) return false;
+    return Objects.equals(id, user.id);
   }
 
   public String getDeviceId() {
@@ -110,21 +123,6 @@ import javax.annotation.Nullable;
 
   public void setLastName(String lastName) {
     this.lastName = lastName;
-  }
-
-  @SuppressWarnings("SimplifiableIfStatement") @Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof User)) return false;
-
-    User user = (User) o;
-
-    if (joined != null ? !joined.equals(user.joined) : user.joined != null) return false;
-    if (deviceId != null ? !deviceId.equals(user.deviceId) : user.deviceId != null) return false;
-    if (firstName != null ? !firstName.equals(user.firstName) : user.firstName != null) {
-      return false;
-    }
-    if (lastName != null ? !lastName.equals(user.lastName) : user.lastName != null) return false;
-    return Objects.equals(id, user.id);
   }
 
   /**

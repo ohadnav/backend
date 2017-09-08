@@ -7,7 +7,7 @@ import com.google.cloud.datastore.StructuredQuery;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.io.IOException;
 import java.util.Comparator;
@@ -32,7 +32,7 @@ public class RepertoireServlet extends BaseServlet {
   @VisibleForTesting static final int FETCH_LIMIT = 10;
 
   /**
-   * Getting the user's repertoire, i.e. the {@link Reactable}s he had created.
+   * Getting the user's repertoire, i.e. the {@link Scene}s he had created.
    *
    * @param req with {@link User} in its body.
    */
@@ -44,19 +44,19 @@ public class RepertoireServlet extends BaseServlet {
     if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
       throw new IOException("Invalid user: " + errorBuilder + ", input: " + user);
     }
-    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
-        .setFilter(StructuredQuery.PropertyFilter.eq(Reactable.DATASTORE_DIRECTOR_ID, user.getId()))
+    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND)
+        .setFilter(StructuredQuery.PropertyFilter.eq(Scene.DATASTORE_DIRECTOR_ID, user.getId()))
         .setLimit(FETCH_LIMIT)
         .build();
-    List<Reactable> reactables = Lists.newArrayList(datastore.run(query))
+    List<Scene> scenes = Lists.newArrayList(datastore.run(query))
         .stream()
-        .map(Reactable::fromEntity)
-        .filter(reactable -> Timestamp.now().getSeconds() - reactable.getCreated().getSeconds()
+        .map(Scene::new)
+        .filter(scene -> Timestamp.now().getSeconds() - scene.getCreated().getSeconds()
             < TimeUnit.DAYS.toSeconds(1))
         .collect(toList());
-    reactables.sort(Comparator.comparing(Reactable::getCreated).reversed());
-    reactables = reactables.subList(0, Math.min(FETCH_LIMIT, reactables.size()));
-    enricher.enrichReactables(reactables, user);
-    resp.getWriter().print(Util.GSON.toJson(reactables));
+    scenes.sort(Comparator.comparing(Scene::getCreated).reversed());
+    scenes = scenes.subList(0, Math.min(FETCH_LIMIT, scenes.size()));
+    enricher.enrichScenes(scenes, user);
+    resp.getWriter().print(Util.GSON.toJson(scenes));
   }
 }

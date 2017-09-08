@@ -18,9 +18,9 @@ public abstract class BaseModel {
   BaseModel() {
   }
 
-  BaseModel(Entity entity) {
-    if (entity.getKey() != null) {
-      id = entity.getKey().getId();
+  BaseModel(FullEntity entity) {
+    if (entity instanceof Entity && entity.getKey() != null) {
+      id = ((Entity) entity).getKey().getId();
     }
   }
 

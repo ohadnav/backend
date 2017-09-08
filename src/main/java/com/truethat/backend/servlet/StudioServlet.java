@@ -2,8 +2,8 @@ package com.truethat.backend.servlet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Pose;
-import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Media;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.storage.DefaultStorageClient;
 import com.truethat.backend.storage.StorageClient;
 import java.io.IOException;
@@ -57,15 +57,9 @@ public class StudioServlet extends BaseServlet {
     }
   }
 
-  void setStorageClient(StorageClient storageClient) {
-    this.storageClient = storageClient;
-  }
-
   /**
-   * Saves the {@link Reactable} within the request to storage and datastore, and response the saved
-   * {@link Reactable} The request is expected to be multipart HTTP request with three parts: 1)
-   * image 2) director ID as string 3) created timestamp as string. (i.e. '1234567890') <p> Part
-   * names are found in {@link Pose}.
+   * Saves the {@link Scene} within the request to storage and datastore, and response the saved
+   * {@link Scene} The request is expected to be multipart HTTP request with multiple parts of the {@link Scene} and its {@link Media} items.
    *
    * @param req multipart request with the pose image and director ID.
    */
@@ -73,18 +67,18 @@ public class StudioServlet extends BaseServlet {
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     try {
-      Part reactablePart = req.getPart(Reactable.REACTABLE_PART);
-      if (reactablePart == null) throw new IOException("Missing reactable, how dare you?");
-      Reactable reactable =
-          Util.GSON.fromJson(new InputStreamReader(reactablePart.getInputStream()),
-              Reactable.class);
+      Part scenePart = req.getPart(Scene.SCENE_PART);
+      if (scenePart == null) throw new IOException("Missing scene, how dare you?");
+      Scene scene =
+          Util.GSON.fromJson(new InputStreamReader(scenePart.getInputStream()),
+              Scene.class);
       StringBuilder errorBuilder = new StringBuilder();
-      if (!isValidReactable(reactable, errorBuilder)) {
+      if (!isValidScene(scene, errorBuilder)) {
         throw new IOException(
-            "Reactable is invalid: " + errorBuilder + ", input: " + reactable);
+            "Scene is invalid: " + errorBuilder + ", input: " + scene);
       }
-      reactable.save(req, this);
-      resp.getWriter().print(Util.GSON.toJson(reactable));
+      scene.save(req, this);
+      resp.getWriter().print(Util.GSON.toJson(scene));
     } catch (Exception e) {
       e.printStackTrace();
       resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -92,27 +86,31 @@ public class StudioServlet extends BaseServlet {
     }
   }
 
+  void setStorageClient(StorageClient storageClient) {
+    this.storageClient = storageClient;
+  }
+
   /**
-   * @return whether the reactable has a valid data, and can be saved.
+   * @return whether the scene has a valid data, and can be saved.
    */
-  @SuppressWarnings("RedundantIfStatement") private boolean isValidReactable(Reactable reactable,
+  @SuppressWarnings("RedundantIfStatement") private boolean isValidScene(Scene scene,
       StringBuilder errorBuilder) {
     // Make sure ths director exists
-    if (reactable.getDirector() == null) {
+    if (scene.getDirector() == null) {
       errorBuilder.append("missing director.");
       return false;
     }
-    if (reactable.getDirector().getId() == null) {
+    if (scene.getDirector().getId() == null) {
       errorBuilder.append("missing director ID.");
       return false;
     }
-    if (datastore.get(userKeyFactory.newKey(reactable.getDirector().getId())) == null) {
+    if (datastore.get(userKeyFactory.newKey(scene.getDirector().getId())) == null) {
       errorBuilder.append("director(i.e. a user) with ID ")
-          .append(reactable.getDirectorId())
+          .append(scene.getDirectorId())
           .append(" not found.");
       return false;
     }
-    if (reactable.getCreated() == null) {
+    if (scene.getCreated() == null) {
       errorBuilder.append("missing created timestamp");
       return false;
     }

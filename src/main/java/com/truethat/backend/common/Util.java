@@ -7,9 +7,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.truethat.backend.external.GsonUTCDateAdapter;
 import com.truethat.backend.external.RuntimeTypeAdapterFactory;
-import com.truethat.backend.model.Pose;
-import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Short;
+import com.truethat.backend.model.Media;
+import com.truethat.backend.model.Photo;
+import com.truethat.backend.model.Video;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,9 +23,9 @@ public class Util {
       new GsonBuilder()
           .registerTypeAdapter(Timestamp.class, new GsonUTCDateAdapter())
           .registerTypeAdapterFactory(
-              RuntimeTypeAdapterFactory.of(Reactable.class)
-                  .registerSubtype(Pose.class)
-                  .registerSubtype(Short.class))
+              RuntimeTypeAdapterFactory.of(Media.class)
+                  .registerSubtype(Photo.class)
+                  .registerSubtype(Video.class))
           .create();
 
   /**
@@ -35,7 +35,7 @@ public class Util {
    *
    * @return the string representation of {@code inputStream}
    */
-  public static String inputStreamToString(InputStream inputStream) throws IOException {
+  static String inputStreamToString(InputStream inputStream) throws IOException {
     inputStream.reset();
     return CharStreams.toString(new InputStreamReader(inputStream, Charsets.UTF_8));
   }

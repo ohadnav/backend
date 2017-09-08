@@ -70,12 +70,12 @@ public class InteractionServlet extends BaseServlet {
           .append(" not found.");
       return false;
     }
-    if (interactionEvent.getReactableId() == null) {
-      errorBuilder.append("missing reactable ID.");
+    if (interactionEvent.getSceneId() == null) {
+      errorBuilder.append("missing scene ID.");
       return false;
     }
-    if (datastore.get(reactableKeyFactory.newKey(interactionEvent.getReactableId())) == null) {
-      errorBuilder.append("reactable with ID ")
+    if (datastore.get(sceneKeyFactory.newKey(interactionEvent.getSceneId())) == null) {
+      errorBuilder.append("scene with ID ")
           .append(interactionEvent.getUserId())
           .append(" not found.");
       return false;

@@ -3,10 +3,10 @@ package com.truethat.backend.servlet;
 import com.google.cloud.Timestamp;
 import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Pose;
-import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Short;
+import com.truethat.backend.model.Photo;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
+import com.truethat.backend.model.Video;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -24,8 +24,7 @@ import static org.mockito.Mockito.when;
 public class TheaterServletTest extends BaseServletTestSuite {
   private User director =
       new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
-  private Pose pose;
-  private Short aShort;
+  private Scene scene;
   private TheaterServlet theaterServlet;
 
   @Override public void setUp() throws Exception {
@@ -34,158 +33,158 @@ public class TheaterServletTest extends BaseServletTestSuite {
     theaterServlet.setDatastore(datastore);
     saveUser(director);
     saveUser(defaultUser);
-    pose = new Pose(director, NOW, null);
-    aShort = new Short(director, NOW, null);
+    scene = new Scene(director, NOW, new Photo(""));
   }
 
   @Test
-  public void fetchReactables() throws Exception {
+  public void fetchScenes() throws Exception {
     prepareFetch();
-    savePose(pose);
+    saveScene(scene);
     resetResponseMock();
     // Sends the GET request
     theaterServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertEquals(1, respondedReactables.size());
-    // Enriches pose
-    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
-    assertEquals(pose, respondedReactables.get(0));
+    assertEquals(1, respondedScenes.size());
+    // Enriches scene
+    enricher.enrichScenes(Collections.singletonList(scene), defaultUser);
+    assertEquals(scene, respondedScenes.get(0));
   }
 
   @Test
   public void timeLimitFilter() throws Exception {
     prepareFetch();
-    pose.setCreated(Timestamp.ofTimeSecondsAndNanos(Timestamp.now().getSeconds() - 86400 - 1, 0));
-    savePose(pose);
+    scene.setCreated(Timestamp.ofTimeSecondsAndNanos(Timestamp.now().getSeconds() - 86400 - 1, 0));
+    saveScene(scene);
     resetResponseMock();
     // Sends the GET request
     theaterServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertEquals(0, respondedReactables.size());
+    assertEquals(0, respondedScenes.size());
   }
 
   @Test
   public void sameUserFilter() throws Exception {
     prepareFetch();
-    pose.setDirector(defaultUser);
-    savePose(pose);
+    scene.setDirector(defaultUser);
+    saveScene(scene);
     resetResponseMock();
     // Sends the GET request
     theaterServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertEquals(0, respondedReactables.size());
+    assertEquals(0, respondedScenes.size());
   }
 
   @Test
   public void fetchMultipleTypes() throws Exception {
     prepareFetch();
-    savePose(pose);
-    saveShort(aShort);
+    saveScene(scene);
+    Scene videoScene = new Scene(director, NOW, new Video(""));
+    saveScene(videoScene);
     resetResponseMock();
     // Sends the GET request
     theaterServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertEquals(2, respondedReactables.size());
-    // Enriches reactables
-    enricher.enrichReactables(Arrays.asList(pose, aShort), defaultUser);
-    assertEquals(pose, respondedReactables.get(0));
-    assertEquals(aShort, respondedReactables.get(1));
+    assertEquals(2, respondedScenes.size());
+    // Enriches scenes
+    enricher.enrichScenes(Arrays.asList(scene, videoScene), defaultUser);
+    assertEquals(scene, respondedScenes.get(0));
+    assertEquals(videoScene, respondedScenes.get(1));
   }
 
   @Test
-  public void dontFetchOwnReactables() throws Exception {
+  public void dontFetchOwnScenes() throws Exception {
     prepareFetch();
-    savePose(pose);
+    saveScene(scene);
     when(mockRequest.getReader()).thenReturn(toBufferedReader(Util.GSON.toJson(director)));
     resetResponseMock();
     // Sends the GET request
     theaterServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables = Util.GSON.fromJson(response,
-        new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes = Util.GSON.fromJson(response,
+        new TypeToken<List<Scene>>() {
         }.getType());
-    assertTrue(respondedReactables.isEmpty());
+    assertTrue(respondedScenes.isEmpty());
   }
 
   @Test
-  public void validateReactables() throws Exception {
+  public void validateScenes() throws Exception {
     prepareFetch();
-    savePose(pose);
+    saveScene(scene);
     datastore.delete(userKeyFactory.newKey(director.getId()));
     resetResponseMock();
     // Sends the GET request
     theaterServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertEquals(0, respondedReactables.size());
+    assertEquals(0, respondedScenes.size());
   }
 
   @Test(expected = Exception.class)
-  public void fetchReactables_missingUser() throws Exception {
-    savePose(pose);
+  public void fetchScenes_missingUser() throws Exception {
+    saveScene(scene);
     when(mockRequest.getReader()).thenReturn(null);
     theaterServlet.doPost(mockRequest, mockResponse);
   }
 
   @Test(expected = Exception.class)
-  public void fetchReactables_userNotFound() throws Exception {
-    savePose(pose);
+  public void fetchScenes_userNotFound() throws Exception {
+    saveScene(scene);
     datastore.delete(userKeyFactory.newKey(defaultUser.getId()));
     when(mockRequest.getReader()).thenReturn(null);
     theaterServlet.doPost(mockRequest, mockResponse);
   }
 
   @SuppressWarnings("Duplicates") @Test
-  public void fetchReactables_emptyDatastore() throws Exception {
-    // Not saving a pose.
+  public void fetchScenes_emptyDatastore() throws Exception {
+    // Not saving a scene.
     prepareFetch();
     // Sends the GET request
     theaterServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertTrue(respondedReactables.isEmpty());
+    assertTrue(respondedScenes.isEmpty());
   }
 
   @Test
-  public void fetchReactables_multipleReactables() throws Exception {
+  public void fetchScenes_multipleScenes() throws Exception {
     prepareFetch();
     // Add 11 poses to datastore.
     for (int i = 0; i < TheaterServlet.FETCH_LIMIT + 1; i++) {
-      savePose(new Pose(director,
-          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), null));
+      saveScene(new Scene(director,
+          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), new Photo("")));
     }
     resetResponseMock();
     // Sends the GET request
     theaterServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
-    }.getType());
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
+        }.getType());
     // Asserts no more than TheaterServlet.FETCH_LIMIT are responded.
-    assertEquals(TheaterServlet.FETCH_LIMIT, respondedReactables.size());
-    long recentTimestamp = respondedReactables.get(0).getCreated().getSeconds();
+    assertEquals(TheaterServlet.FETCH_LIMIT, respondedScenes.size());
+    long recentTimestamp = respondedScenes.get(0).getCreated().getSeconds();
     // Asserts the poses are sorted by recency.
     for (int i = 0; i < TheaterServlet.FETCH_LIMIT; i++) {
-      Pose pose = (Pose) respondedReactables.get(i);
-      assertEquals(recentTimestamp - i, pose.getCreated().getSeconds());
+      Scene scene = respondedScenes.get(i);
+      assertEquals(recentTimestamp - i, scene.getCreated().getSeconds());
       // Should have image url
-      assertNotNull(pose.getImageUrl());
+      assertNotNull(scene.getMedia().getUrl());
     }
   }
 

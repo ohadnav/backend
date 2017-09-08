@@ -149,37 +149,37 @@ public class AuthServletTest extends BaseServletTestSuite {
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_missingFirstName() throws Exception {
+  public void fetchScenes_missingFirstName() throws Exception {
     defaultUser.setFirstName(null);
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_invalidFirstName_tooShort() throws Exception {
+  public void fetchScenes_invalidFirstName_tooShort() throws Exception {
     defaultUser.setFirstName("a");
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_invalidFirstName_illegalCharacters() throws Exception {
+  public void fetchScenes_invalidFirstName_illegalCharacters() throws Exception {
     defaultUser.setFirstName("aaa5ff");
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_missingLastName() throws Exception {
+  public void fetchScenes_missingLastName() throws Exception {
     defaultUser.setLastName(null);
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_invalidLastName_tooShort() throws Exception {
+  public void fetchScenes_invalidLastName_tooShort() throws Exception {
     defaultUser.setLastName("a");
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_invalidLastName_illegalCharacters() throws Exception {
+  public void fetchScenes_invalidLastName_illegalCharacters() throws Exception {
     defaultUser.setLastName("aaa5ff");
     saveUser(defaultUser);
   }

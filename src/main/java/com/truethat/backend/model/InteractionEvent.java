@@ -1,7 +1,6 @@
 package com.truethat.backend.model;
 
 import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
 import com.google.cloud.datastore.KeyFactory;
@@ -19,12 +18,12 @@ import javax.annotation.Nullable;
    * Datastore kind.
    */
   public static final String DATASTORE_KIND = "InteractionEvent";
+  public static final String DATASTORE_SCENE_ID = "sceneId";
   /**
    * Datastore column names.
    */
   private static final String DATASTORE_TIMESTAMP = "timestamp";
   private static final String DATASTORE_USER_ID = "userId";
-  public static final String DATASTORE_REACTABLE_ID = "reactableId";
   private static final String DATASTORE_EVENT_TYPE = "eventType";
   private static final String DATASTORE_REACTION = "reaction";
 
@@ -51,11 +50,11 @@ import javax.annotation.Nullable;
   private EventType eventType;
 
   /**
-   * Of the {@link Reactable} that was interacted with.
+   * Of the {@link Scene} that was interacted with.
    */
-  private Long reactableId;
+  private Long sceneId;
 
-  public InteractionEvent(Entity entity) {
+  public InteractionEvent(FullEntity entity) {
     super(entity);
     if (entity.contains(DATASTORE_USER_ID)) {
       userId = entity.getLong(DATASTORE_USER_ID);
@@ -66,28 +65,29 @@ import javax.annotation.Nullable;
     if (entity.contains(DATASTORE_REACTION)) {
       reaction = Emotion.fromCode((int) entity.getLong(DATASTORE_REACTION));
     }
-    if (entity.contains(DATASTORE_REACTABLE_ID)) {
-      reactableId = entity.getLong(DATASTORE_REACTABLE_ID);
+    if (entity.contains(DATASTORE_SCENE_ID)) {
+      sceneId = entity.getLong(DATASTORE_SCENE_ID);
     }
     if (entity.contains(DATASTORE_TIMESTAMP)) {
       timestamp = entity.getTimestamp(DATASTORE_TIMESTAMP);
     }
   }
+
   @VisibleForTesting
-  public InteractionEvent(Long userId, Long reactableId, Timestamp timestamp, EventType eventType,
+  public InteractionEvent(Long userId, Long sceneId, Timestamp timestamp, EventType eventType,
       @Nullable
-      Emotion reaction) {
+          Emotion reaction) {
     this.timestamp = timestamp;
     this.userId = userId;
     this.reaction = reaction;
     this.eventType = eventType;
-    this.reactableId = reactableId;
+    this.sceneId = sceneId;
   }
 
   @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
     FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
-    if (reactableId != null) {
-      builder.set(InteractionEvent.DATASTORE_REACTABLE_ID, reactableId);
+    if (sceneId != null) {
+      builder.set(InteractionEvent.DATASTORE_SCENE_ID, sceneId);
     }
     if (timestamp != null) {
       builder.set(InteractionEvent.DATASTORE_TIMESTAMP, timestamp);
@@ -110,7 +110,7 @@ import javax.annotation.Nullable;
     result = 31 * result + (userId != null ? userId.hashCode() : 0);
     result = 31 * result + (reaction != null ? reaction.hashCode() : 0);
     result = 31 * result + (eventType != null ? eventType.hashCode() : 0);
-    result = 31 * result + (reactableId != null ? reactableId.hashCode() : 0);
+    result = 31 * result + (sceneId != null ? sceneId.hashCode() : 0);
     return result;
   }
 
@@ -127,15 +127,15 @@ import javax.annotation.Nullable;
     if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
     if (reaction != that.reaction) return false;
     if (eventType != that.eventType) return false;
-    return reactableId != null ? reactableId.equals(that.reactableId) : that.reactableId == null;
+    return sceneId != null ? sceneId.equals(that.sceneId) : that.sceneId == null;
   }
 
   public Long getUserId() {
     return userId;
   }
 
-  public Long getReactableId() {
-    return reactableId;
+  public Long getSceneId() {
+    return sceneId;
   }
 
   public Emotion getReaction() {

@@ -9,7 +9,7 @@ import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.io.IOException;
 import java.util.Comparator;
@@ -50,12 +50,12 @@ public class TheaterServlet extends BaseServlet {
     return true;
   }
 
-  private static boolean isValidReactable(Reactable reactable) {
-    return reactable.getDirector() != null;
+  private static boolean isValidScene(Scene scene) {
+    return scene.getDirector() != null;
   }
 
   /**
-   * Retrieves {@link Reactable}s from the Datastore.
+   * Retrieves {@link Scene}s from the Datastore.
    */
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -66,20 +66,20 @@ public class TheaterServlet extends BaseServlet {
     if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
       throw new IOException("Invalid user: " + errorBuilder + ", input: " + user);
     }
-    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
-        .setFilter(PropertyFilter.gt(Reactable.DATASTORE_CREATED, Timestamp.ofTimeSecondsAndNanos(
+    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND)
+        .setFilter(PropertyFilter.gt(Scene.DATASTORE_CREATED, Timestamp.ofTimeSecondsAndNanos(
             Timestamp.now().getSeconds() - TimeUnit.DAYS.toSeconds(1), 0)))
         .build();
-    List<Reactable> reactables = Lists.newArrayList(datastore.run(query))
+    List<Scene> scenes = Lists.newArrayList(datastore.run(query))
         .stream()
-        .map(Reactable::fromEntity)
-        .filter(reactable -> !Objects.equals(reactable.getDirectorId(), user.getId()))
+        .map(Scene::new)
+        .filter(scene -> !Objects.equals(scene.getDirectorId(), user.getId()))
         .collect(toList());
     // Sort by recency
-    reactables.sort(Comparator.comparing(Reactable::getCreated).reversed());
-    reactables = reactables.subList(0, Math.min(FETCH_LIMIT, reactables.size()));
-    enricher.enrichReactables(reactables, user);
-    reactables = reactables.stream().filter(TheaterServlet::isValidReactable).collect(toList());
-    resp.getWriter().print(Util.GSON.toJson(reactables));
+    scenes.sort(Comparator.comparing(Scene::getCreated).reversed());
+    scenes = scenes.subList(0, Math.min(FETCH_LIMIT, scenes.size()));
+    enricher.enrichScenes(scenes, user);
+    scenes = scenes.stream().filter(TheaterServlet::isValidScene).collect(toList());
+    resp.getWriter().print(Util.GSON.toJson(scenes));
   }
 }

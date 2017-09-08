@@ -1,9 +1,10 @@
 package com.truethat.backend.servlet;
 
 import com.google.cloud.datastore.Query;
-import com.truethat.backend.model.Pose;
-import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Short;
+import com.truethat.backend.model.Media;
+import com.truethat.backend.model.Photo;
+import com.truethat.backend.model.Scene;
+import com.truethat.backend.model.Video;
 import javax.servlet.ServletException;
 import org.junit.Test;
 
@@ -14,82 +15,81 @@ import static org.mockito.Mockito.when;
  * Proudly created by ohad on 10/05/2017.
  */
 public class StudioServletTest extends BaseServletTestSuite {
-  private Pose pose;
-  private Short aShort;
+  private Scene scene;
 
   @Override public void setUp() throws Exception {
     super.setUp();
     saveUser(defaultUser);
-    pose = new Pose(defaultUser, NOW, null);
-    aShort = new Short(defaultUser, NOW, null);
+    scene = new Scene(defaultUser, NOW, new Photo(""));
   }
 
   @Test
   public void poseSaved() throws Exception {
-    savePose(pose);
-    Pose savedPose = (Pose) Reactable.fromEntity(
-        datastore.run(Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND).build())
+    saveScene(scene);
+    Scene saved = new Scene(
+        datastore.run(Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND).build())
             .next());
-    pose.setDirector(null);
-    pose.setDirectorId(defaultUser.getId());
-    assertEquals(pose, savedPose);
+    scene.setDirector(null);
+    scene.setDirectorId(defaultUser.getId());
+    assertEquals(scene, saved);
   }
 
   @Test
   public void shortSaved() throws Exception {
-    saveShort(aShort);
-    Short savedShort = (Short) Reactable.fromEntity(
-        datastore.run(Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND).build())
+    scene = new Scene(defaultUser, NOW, new Video(""));
+    saveScene(scene);
+    Scene saved = new Scene(
+        datastore.run(Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND).build())
             .next());
-    aShort.setDirector(null);
-    aShort.setDirectorId(defaultUser.getId());
-    assertEquals(aShort, savedShort);
+    scene.setDirector(null);
+    scene.setDirectorId(defaultUser.getId());
+    assertEquals(scene, saved);
   }
 
   @Test(expected = ServletException.class)
   public void poseNotSaved_noImage() throws Exception {
-    preparePoseSave(pose);
-    when(mockRequest.getPart(Pose.IMAGE_PART)).thenReturn(null);
+    prepareSceneSave(scene);
+    when(mockRequest.getPart(Media.MEDIA_PART)).thenReturn(null);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
   }
 
   @Test(expected = ServletException.class)
-  public void reactableNotSaved_noReactable() throws Exception {
-    preparePoseSave(pose);
-    when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(null);
+  public void sceneNotSaved_noScene() throws Exception {
+    prepareSceneSave(scene);
+    when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(null);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
   }
 
   @Test(expected = ServletException.class)
-  public void reactableNotSaved_missingDirector() throws Exception {
-    pose.setDirector(null);
-    preparePoseSave(pose);
+  public void sceneNotSaved_missingDirector() throws Exception {
+    scene.setDirector(null);
+    prepareSceneSave(scene);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
   }
 
   @Test(expected = ServletException.class)
-  public void reactableNotSaved_missingDirectorId() throws Exception {
-    pose.getDirector().setId(null);
-    preparePoseSave(pose);
+  public void sceneNotSaved_missingDirectorId() throws Exception {
+    scene.getDirector().setId(null);
+    prepareSceneSave(scene);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
   }
 
   @Test(expected = ServletException.class)
-  public void reactableNotSaved_directorNotFound() throws Exception {
+  public void sceneNotSaved_directorNotFound() throws Exception {
     emptyDatastore(null);
-    preparePoseSave(pose);
+    prepareSceneSave(scene);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
   }
 
   @Test(expected = ServletException.class)
-  public void reactableNotSaved_missingCreated() throws Exception {
-    pose.setCreated(null);
-    preparePoseSave(pose);
+  public void sceneNotSaved_missingCreated() throws Exception {
+    scene.setCreated(null);
+    prepareSceneSave(scene);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
   }

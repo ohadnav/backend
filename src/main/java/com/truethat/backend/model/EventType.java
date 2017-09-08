@@ -8,12 +8,12 @@ package com.truethat.backend.model;
  */
 public enum EventType {
   /**
-   * User viewed a reactable.
+   * User viewed a scene.
    */
   VIEW(1),
 
   /**
-   * User reacted to a reactable.
+   * User reacted to a scene.
    */
   REACTION(2);
 

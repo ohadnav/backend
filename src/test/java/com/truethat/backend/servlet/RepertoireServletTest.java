@@ -3,8 +3,8 @@ package com.truethat.backend.servlet;
 import com.google.cloud.Timestamp;
 import com.google.gson.reflect.TypeToken;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Pose;
-import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Photo;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
  * Proudly created by ohad on 03/07/2017.
  */
 public class RepertoireServletTest extends BaseServletTestSuite {
-  private Pose pose;
+  private Scene scene;
   private RepertoireServlet repertoireServlet;
   private User otherUser =
       new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
@@ -29,17 +29,17 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     repertoireServlet = new RepertoireServlet();
     repertoireServlet.setDatastore(datastore);
     saveUser(defaultUser);
-    pose = new Pose(defaultUser, NOW, null);
+    scene = new Scene(defaultUser, NOW, new Photo(""));
   }
 
   @Test(expected = Exception.class)
-  public void fetchReactables_missingUser() throws Exception {
+  public void fetchScenes_missingUser() throws Exception {
     when(mockRequest.getReader()).thenReturn(null);
     repertoireServlet.doPost(mockRequest, mockResponse);
   }
 
   @Test(expected = Exception.class)
-  public void fetchReactables_userNotFound() throws Exception {
+  public void fetchScenes_userNotFound() throws Exception {
     datastore.delete(userKeyFactory.newKey(defaultUser.getId()));
     when(mockRequest.getReader()).thenReturn(null);
     repertoireServlet.doPost(mockRequest, mockResponse);
@@ -47,50 +47,50 @@ public class RepertoireServletTest extends BaseServletTestSuite {
 
   @Test
   public void fetchRepertoire() throws Exception {
-    // Add a pose to datastore.
-    savePose(pose);
+    // Add a scene to datastore.
+    saveScene(scene);
     // Sends the GET request
     prepareFetch();
     repertoireServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertEquals(1, respondedReactables.size());
-    // Enriches pose.
-    enricher.enrichReactables(Collections.singletonList(pose), defaultUser);
-    assertEquals(pose, respondedReactables.get(0));
+    assertEquals(1, respondedScenes.size());
+    // Enriches scene.
+    enricher.enrichScenes(Collections.singletonList(scene), defaultUser);
+    assertEquals(scene, respondedScenes.get(0));
   }
 
   @Test
   public void distinctDirectorFilter() throws Exception {
     saveUser(otherUser);
-    // Add a pose from a different director
-    pose.setDirector(otherUser);
-    savePose(pose);
+    // Add a scene from a different director
+    scene.setDirector(otherUser);
+    saveScene(scene);
     // Sends the GET request
     prepareFetch();
     repertoireServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertEquals(0, respondedReactables.size());
+    assertEquals(0, respondedScenes.size());
   }
 
   @Test
   public void recencyFilter() throws Exception {
-    // Add a pose from an old timestamp
-    pose.setCreated(Timestamp.ofTimeSecondsAndNanos(Timestamp.now().getSeconds() - 86400 - 1, 0));
-    savePose(pose);
+    // Add a scene from an old timestamp
+    scene.setCreated(Timestamp.ofTimeSecondsAndNanos(Timestamp.now().getSeconds() - 86400 - 1, 0));
+    saveScene(scene);
     // Sends the GET request
     prepareFetch();
     repertoireServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
-    assertEquals(0, respondedReactables.size());
+    assertEquals(0, respondedScenes.size());
   }
 
   @SuppressWarnings("Duplicates") @Test
@@ -100,27 +100,27 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     repertoireServlet.doPost(mockRequest, mockResponse);
   }
 
-  @Test public void fetchRepertoire_multipleReactables() throws Exception {
-    // Save reactables
+  @Test public void fetchRepertoire_multipleScenes() throws Exception {
+    // Save scenes
     for (int i = 0; i < RepertoireServlet.FETCH_LIMIT + 1; i++) {
-      savePose(new Pose(defaultUser,
-          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), null));
+      saveScene(new Scene(defaultUser,
+          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), new Photo("")));
     }
     prepareFetch();
     repertoireServlet.doPost(mockRequest, mockResponse);
     String response = responseWriter.toString();
-    List<Reactable> respondedReactables =
-        Util.GSON.fromJson(response, new TypeToken<List<Reactable>>() {
+    List<Scene> respondedScenes =
+        Util.GSON.fromJson(response, new TypeToken<List<Scene>>() {
         }.getType());
     // Asserts no more than StudioServlet.FETCH_LIMIT are responded.
-    assertEquals(RepertoireServlet.FETCH_LIMIT, respondedReactables.size());
-    long recentTimestamp = respondedReactables.get(0).getCreated().getSeconds();
-    // Asserts the reactables are sorted by recency.
+    assertEquals(RepertoireServlet.FETCH_LIMIT, respondedScenes.size());
+    long recentTimestamp = respondedScenes.get(0).getCreated().getSeconds();
+    // Asserts the scenes are sorted by recency.
     for (int i = 0; i < RepertoireServlet.FETCH_LIMIT; i++) {
-      Pose pose = (Pose) respondedReactables.get(i);
-      assertEquals(recentTimestamp - i, pose.getCreated().getSeconds());
+      Scene scene = respondedScenes.get(i);
+      assertEquals(recentTimestamp - i, scene.getCreated().getSeconds());
       // Should have image url
-      assertNotNull(pose.getImageUrl());
+      assertNotNull(scene.getMedia().getUrl());
     }
   }
 
