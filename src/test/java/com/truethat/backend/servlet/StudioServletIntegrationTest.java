@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
+import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
@@ -87,18 +88,19 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
 
   @Test
   public void savePhoto() throws Exception {
-    // Saves pose director to datastore.
+    // Saves scene director to datastore.
     saveUser(director);
     initResponseMock();
-    // Saves pose
-    Scene scene = new Scene(director, Timestamp.now(), new Photo(""));
+    // Saves scene
+    Scene scene =
+        new Scene(director, Timestamp.now(), Collections.singletonList(new Photo("")), null);
     // Initializing request mock
     String fileName = "src/test/resources/servlet/1x1_pixel.jpg";
-    when(mockFilePart.getContentType()).thenReturn("image/jpeg");
+    when(mockFilePart.getContentType()).thenReturn("image/jpg");
     when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
     when(mockScenePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(scene)));
-    when(mockRequest.getPart(Media.MEDIA_PART)).thenReturn(mockFilePart);
+    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "_0")).thenReturn(mockFilePart);
     when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(mockScenePart);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
@@ -109,13 +111,13 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
         .map(Scene::new)
         .collect(toList())
         .get(0);
-    // Asserts that the pose's image is saved, and matches the uploaded one.
-    TestUtil.assertUrl(saved.getMedia().getUrl(), HttpURLConnection.HTTP_OK,
+    // Asserts that the scene's image is saved, and matches the uploaded one.
+    TestUtil.assertUrl(saved.getMediaItems().get(0).getUrl(), HttpURLConnection.HTTP_OK,
         new FileInputStream(new File(fileName)));
     scene.setDirector(null);
     scene.setDirectorId(director.getId());
     scene.setId(saved.getId());
-    scene.getMedia().setUrl(saved.getMedia().getUrl());
+    scene.getMediaItems().get(0).setUrl(saved.getMediaItems().get(0).getUrl());
     assertEquals(scene, saved);
   }
 
@@ -123,15 +125,16 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
   public void saveVideo() throws Exception {
     saveUser(director);
     initResponseMock();
-    // Saves pose
-    Scene scene = new Scene(director, Timestamp.now(), new Video(""));
+    // Saves scene
+    Scene scene =
+        new Scene(director, Timestamp.now(), Collections.singletonList(new Video("")), null);
     // Initializing request mock
     String fileName = "src/test/resources/servlet/wink.mp4";
     when(mockFilePart.getContentType()).thenReturn("video/mp4");
     when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
     when(mockScenePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(scene)));
-    when(mockRequest.getPart(Media.MEDIA_PART)).thenReturn(mockFilePart);
+    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "_0")).thenReturn(mockFilePart);
     when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(mockScenePart);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
@@ -145,11 +148,11 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     scene.setDirector(null);
     scene.setDirectorId(director.getId());
     scene.setId(saved.getId());
-    scene.getMedia().setUrl(saved.getMedia().getUrl());
+    scene.getMediaItems().get(0).setUrl(saved.getMediaItems().get(0).getUrl());
     assertEquals(scene, saved);
     // Asserts that the video is saved. We dont assert the uploaded file matches the
     // original one, as it streamed to the client, and so cannot be fully matched.
-    TestUtil.assertUrl(saved.getMedia().getUrl(), HttpURLConnection.HTTP_OK, null);
+    TestUtil.assertUrl(saved.getMediaItems().get(0).getUrl(), HttpURLConnection.HTTP_OK, null);
   }
 
   private void initResponseMock() throws Exception {

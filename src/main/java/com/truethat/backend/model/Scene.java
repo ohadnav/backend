@@ -2,6 +2,7 @@ package com.truethat.backend.model;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.datastore.Entity;
+import com.google.cloud.datastore.EntityValue;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
 import com.google.cloud.datastore.KeyFactory;
@@ -10,11 +11,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import com.truethat.backend.servlet.StudioServlet;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Part;
 
-import static com.truethat.backend.model.Media.MEDIA_PART;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Proudly created by ohad on 27/06/2017.
@@ -40,10 +42,15 @@ public class Scene extends BaseModel {
   public static final String DATASTORE_CREATED = "created";
   public static final String DATASTORE_DIRECTOR_ID = "directorId";
   private static final String DATASTORE_MEDIA = "media";
+  private static final String DATASTORE_EDGES = "edge";
   /**
-   * The media item of this scene.
+   * The media items of this scene.
    */
-  private Media media;
+  private List<Media> mediaItems;
+  /**
+   * The interaction flow of users with this scene.
+   */
+  private List<Edge> edges;
   /**
    * ID of the Scene director (i.e. its creator).
    */
@@ -65,8 +72,8 @@ public class Scene extends BaseModel {
    */
   private Emotion userReaction;
   /**
-   * Scene director (i.e. its creator). This field is the one returned to client endpoints, and
-   * not {@link #directorId}.
+   * Scene director (i.e. its creator). This field is the one returned to client endpoints, and not
+   * {@link #directorId}.
    */
   private User director;
 
@@ -79,22 +86,34 @@ public class Scene extends BaseModel {
       created = entity.getTimestamp(DATASTORE_CREATED);
     }
     if (entity.contains(DATASTORE_MEDIA)) {
-      media = Media.fromEntity(entity.getEntity(DATASTORE_MEDIA));
+      @SuppressWarnings("unchecked") List<EntityValue> mediaEntities =
+          entity.getList(DATASTORE_MEDIA);
+      mediaItems = mediaEntities.stream()
+          .map(entityValue -> Media.fromEntity(entityValue.get()))
+          .collect(toList());
+    }
+    if (entity.contains(DATASTORE_EDGES)) {
+      @SuppressWarnings("unchecked") List<EntityValue> edgeEntities =
+          entity.getList(DATASTORE_EDGES);
+      edges =
+          edgeEntities.stream().map(entityValue -> new Edge(entityValue.get())).collect(toList());
     }
   }
 
-  @VisibleForTesting public Scene(User director, Timestamp created, Media media) {
+  @VisibleForTesting public Scene(User director, Timestamp created, List<Media> mediaItems,
+      List<Edge> edges) {
     this.director = director;
     this.created = created;
-    this.media = media;
+    this.mediaItems = mediaItems;
+    this.edges = edges;
   }
 
   // A default constructor is provided for serialization and de-serialization.
   @SuppressWarnings("unused") Scene() {
   }
 
-  public Media getMedia() {
-    return media;
+  public List<Media> getMediaItems() {
+    return mediaItems;
   }
 
   public boolean isViewed() {
@@ -147,18 +166,8 @@ public class Scene extends BaseModel {
     this.created = created;
   }
 
-  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
-    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
-    if (created != null) {
-      builder.set(DATASTORE_CREATED, created);
-    }
-    if (getDirectorId() != null) {
-      builder.set(DATASTORE_DIRECTOR_ID, getDirectorId());
-    }
-    if (media != null) {
-      builder.set(DATASTORE_MEDIA, media.toEntityBuilder(keyFactory).build());
-    }
-    return builder;
+  public void setMediaItems(List<Media> mediaItems) {
+    this.mediaItems = mediaItems;
   }
 
   @Override public int hashCode() {
@@ -190,15 +199,47 @@ public class Scene extends BaseModel {
     return director != null ? director.equals(scene.director) : scene.director == null;
   }
 
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
+    if (created != null) {
+      builder.set(DATASTORE_CREATED, created);
+    }
+    if (getDirectorId() != null) {
+      builder.set(DATASTORE_DIRECTOR_ID, getDirectorId());
+    }
+    if (mediaItems != null && !mediaItems.isEmpty()) {
+      builder.set(DATASTORE_MEDIA, mediaItems.stream()
+          .map(media -> new EntityValue(media.toEntityBuilder(keyFactory).build()))
+          .collect(toList()));
+    }
+    if (edges != null && !edges.isEmpty()) {
+      builder.set(DATASTORE_EDGES, edges.stream()
+          .map(edge -> new EntityValue(edge.toEntityBuilder(keyFactory).build()))
+          .collect(toList()));
+    }
+    return builder;
+  }
+
+  public List<Edge> getEdges() {
+    return edges;
+  }
+
+  public void setEdges(List<Edge> edges) {
+    this.edges = edges;
+  }
+
   /**
+
    * Saves this scene to datastore and storage.
    *
    * @param req     in which the scene is described.
    * @param servlet from which the client requested the save.
    */
   public void save(HttpServletRequest req, StudioServlet servlet) throws Exception {
-    if (media != null) {
-      saveMedia(req, servlet);
+    if (mediaItems != null) {
+      for (int i = 0; i < mediaItems.size(); i++) {
+        saveMedia(i, req, servlet);
+      }
     }
     FullEntity entity = toEntityBuilder(servlet.getSceneKeyFactory()).build();
     Entity savedEntity = servlet.getDatastore().add(entity);
@@ -206,30 +247,50 @@ public class Scene extends BaseModel {
   }
 
   /**
-   * Saves {@link #media} to storage.
-   *
+   * Saves {@link #mediaItems} to storage.
+   *  @param mediaIndex   to save.
    * @param req     in which the scene is described.
    * @param servlet from which the client requested the save.
    */
-  private void saveMedia(HttpServletRequest req, StudioServlet servlet)
+  private void saveMedia(int mediaIndex, HttpServletRequest req,
+      StudioServlet servlet)
       throws Exception {
-    Part part = req.getPart(MEDIA_PART);
-    if (part == null) throw new IOException("Missing media part");
-    String relativeUrl = getMediaPath(part);
+    Part part = req.getPart(generatePartName(mediaIndex));
+    if (part == null) throw new IOException("Missing " + generatePartName(mediaIndex) + " part");
+    String relativeUrl = getSaveDestination(mediaIndex, part);
     BlobInfo blobInfo = servlet.getStorageClient().save(relativeUrl,
         part.getContentType(),
         ByteStreams.toByteArray(part.getInputStream()),
         servlet.getBucketName());
-    media.setUrl(servlet.getStorageClient().getPublicLink(blobInfo));
+    mediaItems.get(mediaIndex).setUrl(servlet.getStorageClient().getPublicLink(blobInfo));
   }
 
   /**
-   * @param part of {@link #media}
+   * @param mediaIndex to get a save path for
+   * @param part  of {@link #mediaItems}
    *
-   * @return sub path within the storage in which to save the media content.
+   * @return sub path within the storage in which to save {@code media} content.
    */
-  private String getMediaPath(Part part) {
-    return Media.STORAGE_SUB_PATH + getDirectorId() + "/" + created.getSeconds() + "-" + Math.round(
-        Math.random() * 1000000000) + "." + part.getContentType().split("/")[1];
+  private String getSaveDestination(int mediaIndex, Part part) {
+    return Media.STORAGE_SUB_PATH
+        + getDirectorId()
+        + "/"
+        + mediaIndex
+        + "-"
+        + created.getSeconds()
+        + "-"
+        + Math.round(
+        Math.random() * 1000000000)
+        + "."
+        + part.getContentType().split("/")[1];
+  }
+
+  /**
+   * @param mediaIndex to query for
+   *
+   * @return expected HTTP multipart name for media content of the {@code mediaIndex}-th item.
+   */
+  private String generatePartName(int mediaIndex) {
+    return Media.MEDIA_PART_PREFIX + "_" + mediaIndex;
   }
 }

@@ -17,6 +17,7 @@ import com.truethat.backend.model.Media;
 import com.truethat.backend.model.Photo;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
+import com.truethat.backend.model.Video;
 import com.truethat.backend.storage.LocalStorageClient;
 import com.truethat.backend.storage.StorageClient;
 import java.io.File;
@@ -37,6 +38,7 @@ import org.mockito.MockitoAnnotations;
 import org.threeten.bp.Duration;
 
 import static com.truethat.backend.common.TestUtil.toBufferedReader;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -60,7 +62,6 @@ public class BaseServletTestSuite {
   AuthServlet authServlet;
   SceneEnricher enricher;
   private InteractionServlet interactionServlet;
-  @Mock private Part mockFilePart;
   @Mock private Part mockScenePart;
 
   @BeforeClass
@@ -124,23 +125,28 @@ public class BaseServletTestSuite {
    * @param scene to save
    */
   void prepareSceneSave(Scene scene) throws Exception {
-    File file;
-    if (scene.getMedia() instanceof Photo) {
-      file = new File("src/test/resources/servlet/1x1_pixel.jpg");
-      when(mockFilePart.getContentType()).thenReturn("image/jpeg");
-    } else {
-      file = new File("src/test/resources/servlet/wink.mp4");
-      when(mockFilePart.getContentType()).thenReturn("video/mp4");
+    for (int i = 0; i < scene.getMediaItems().size(); i++) {
+      File file = null;
+      Part mockFilePart = mock(Part.class);
+      if (scene.getMediaItems().get(i) instanceof Photo) {
+        file = new File("src/test/resources/servlet/1x1_pixel.jpg");
+        when(mockFilePart.getContentType()).thenReturn("image/jpg");
+      } else if (scene.getMediaItems().get(i) instanceof Video) {
+        file = new File("src/test/resources/servlet/wink.mp4");
+        when(mockFilePart.getContentType()).thenReturn("video/mp4");
+      }
+      if (file != null) {
+        when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(file));
+      }
+      when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "_" + i)).thenReturn(mockFilePart);
     }
-    when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(file));
     when(mockScenePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(scene)));
-    when(mockRequest.getPart(Media.MEDIA_PART)).thenReturn(mockFilePart);
     when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(mockScenePart);
   }
 
   /**
-   * Saves a pose to datastore and updates {@code pose} id.
+   * Saves a scene to datastore and updates {@code scene} id.
    *
    * @param scene to save
    */
@@ -148,11 +154,13 @@ public class BaseServletTestSuite {
     resetResponseMock();
     prepareSceneSave(scene);
     studioServlet.doPost(mockRequest, mockResponse);
-    // Updates the pose id.
+    // Updates the scene id.
     Scene responded = Util.GSON.fromJson(responseWriter.toString(), Scene.class);
     scene.setId(responded.getId());
     scene.setCreated(responded.getCreated());
-    scene.getMedia().setUrl(responded.getMedia().getUrl());
+    // Updates edges and media items
+    scene.setEdges(responded.getEdges());
+    scene.setMediaItems(responded.getMediaItems());
   }
 
   /**
@@ -165,7 +173,7 @@ public class BaseServletTestSuite {
     when(mockRequest.getReader()).thenReturn(
         toBufferedReader(Util.GSON.toJson(interactionEvent)));
     interactionServlet.doPost(mockRequest, mockResponse);
-    // Updates the pose id.
+    // Updates the scene id.
     InteractionEvent response =
         Util.GSON.fromJson(responseWriter.toString(), InteractionEvent.class);
     interactionEvent.setId(response.getId());

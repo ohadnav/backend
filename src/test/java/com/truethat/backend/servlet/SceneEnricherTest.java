@@ -33,7 +33,7 @@ public class SceneEnricherTest extends BaseServletTestSuite {
     saveUser(director);
     saveUser(friend);
     // Saves a scene.
-    scene = new Scene(director, NOW, new Photo(""));
+    scene = new Scene(director, NOW, Collections.singletonList(new Photo("")), null);
     saveScene(scene);
     // Adds the user.
     saveUser(defaultUser);

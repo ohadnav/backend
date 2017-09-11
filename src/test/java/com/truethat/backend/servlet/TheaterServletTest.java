@@ -33,7 +33,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
     theaterServlet.setDatastore(datastore);
     saveUser(director);
     saveUser(defaultUser);
-    scene = new Scene(director, NOW, new Photo(""));
+    scene = new Scene(director, NOW, Collections.singletonList(new Photo("")), null);
   }
 
   @Test
@@ -87,7 +87,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
   public void fetchMultipleTypes() throws Exception {
     prepareFetch();
     saveScene(scene);
-    Scene videoScene = new Scene(director, NOW, new Video(""));
+    Scene videoScene = new Scene(director, NOW, Collections.singletonList(new Video("")), null);
     saveScene(videoScene);
     resetResponseMock();
     // Sends the GET request
@@ -164,10 +164,13 @@ public class TheaterServletTest extends BaseServletTestSuite {
   @Test
   public void fetchScenes_multipleScenes() throws Exception {
     prepareFetch();
-    // Add 11 poses to datastore.
+    // Add 11 scenes to datastore.
     for (int i = 0; i < TheaterServlet.FETCH_LIMIT + 1; i++) {
       saveScene(new Scene(director,
-          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), new Photo("")));
+          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()),
+          Collections.singletonList(new Photo(
+              "")),
+          null));
     }
     resetResponseMock();
     // Sends the GET request
@@ -179,12 +182,12 @@ public class TheaterServletTest extends BaseServletTestSuite {
     // Asserts no more than TheaterServlet.FETCH_LIMIT are responded.
     assertEquals(TheaterServlet.FETCH_LIMIT, respondedScenes.size());
     long recentTimestamp = respondedScenes.get(0).getCreated().getSeconds();
-    // Asserts the poses are sorted by recency.
+    // Asserts the scenes are sorted by recency.
     for (int i = 0; i < TheaterServlet.FETCH_LIMIT; i++) {
       Scene scene = respondedScenes.get(i);
       assertEquals(recentTimestamp - i, scene.getCreated().getSeconds());
       // Should have image url
-      assertNotNull(scene.getMedia().getUrl());
+      assertNotNull(scene.getMediaItems().get(0).getUrl());
     }
   }
 

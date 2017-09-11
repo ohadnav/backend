@@ -7,6 +7,7 @@ import com.truethat.backend.model.Photo;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.io.IOException;
+import java.util.Collections;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -23,7 +24,7 @@ public class InteractionEventServletTest extends BaseServletTestSuite {
     super.setUp();
     saveUser(director);
     saveUser(defaultUser);
-    scene = new Scene(director, NOW, new Photo(""));
+    scene = new Scene(director, NOW, Collections.singletonList(new Photo("")), null);
   }
 
   @Test

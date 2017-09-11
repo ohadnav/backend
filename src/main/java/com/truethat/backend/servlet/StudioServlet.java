@@ -2,6 +2,7 @@ package com.truethat.backend.servlet;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.model.Edge;
 import com.truethat.backend.model.Media;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.storage.DefaultStorageClient;
@@ -9,7 +10,6 @@ import com.truethat.backend.storage.StorageClient;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
-import java.util.logging.Logger;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -28,7 +28,6 @@ import javax.servlet.http.Part;
 @WebServlet(value = "/studio", name = "Studio")
 @MultipartConfig
 public class StudioServlet extends BaseServlet {
-  private static final Logger LOG = Logger.getLogger(StudioServlet.class.getName());
   private StorageClient storageClient;
   private String bucketName = System.getenv("STUDIO_BUCKET");
 
@@ -59,9 +58,10 @@ public class StudioServlet extends BaseServlet {
 
   /**
    * Saves the {@link Scene} within the request to storage and datastore, and response the saved
-   * {@link Scene} The request is expected to be multipart HTTP request with multiple parts of the {@link Scene} and its {@link Media} items.
+   * {@link Scene} The request is expected to be multipart HTTP request with multiple parts of the
+   * {@link Scene} and its {@link Media} items.
    *
-   * @param req multipart request with the pose image and director ID.
+   * @param req multipart request that contains {@link Scene} metadata and {@link Media} files parts.
    */
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -82,7 +82,11 @@ public class StudioServlet extends BaseServlet {
     } catch (Exception e) {
       e.printStackTrace();
       resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-      throw new ServletException(e.getMessage());
+      if (e instanceof IOException) {
+        throw (IOException) e;
+      } else {
+        throw new ServletException(e);
+      }
     }
   }
 
@@ -113,6 +117,84 @@ public class StudioServlet extends BaseServlet {
     if (scene.getCreated() == null) {
       errorBuilder.append("missing created timestamp");
       return false;
+    }
+    // Validate edges items
+    if (scene.getMediaItems().size() <= 1 && (scene.getEdges() != null && !scene.getEdges()
+        .isEmpty())) {
+      errorBuilder.append("edges should be empty or null when no multiple media items exists.");
+      return false;
+    }
+    // If there aren't multiple media items there is no need to validate edges.
+    if (scene.getMediaItems().size() <= 1) {
+      return true;
+    }
+    if (scene.getMediaItems().size() > 1 && scene.getEdges() == null) {
+      errorBuilder.append("edges cannot be null when multiple media items exists.");
+      return false;
+    }
+    if (scene.getMediaItems().size() > 1 && scene.getEdges().isEmpty()) {
+      errorBuilder.append("edges cannot be empty when multiple media items exists.");
+      return false;
+    }
+    for (Edge edge : scene.getEdges()) {
+      if (edge.getSourceIndex() == null) {
+        errorBuilder.append("edge (")
+            .append(edge)
+            .append(") is missing a source index.");
+        return false;
+      }
+      if (edge.getTargetIndex() == null) {
+        errorBuilder.append("edge (")
+            .append(edge)
+            .append(") is missing a target index.");
+        return false;
+      }
+      if (edge.getReaction() == null) {
+        errorBuilder.append("edge (")
+            .append(edge)
+            .append(") is missing a reaction.");
+        return false;
+      }
+      if (edge.getSourceIndex() >= edge.getTargetIndex()) {
+        errorBuilder.append("edge (")
+            .append(edge)
+            .append(") source index must be smaller than target index.");
+        return false;
+      }
+      if (edge.getSourceIndex() < 0) {
+        errorBuilder.append("edge (")
+            .append(edge)
+            .append(") source index mustn't be negative");
+        return false;
+      }
+      if (edge.getTargetIndex() >= scene.getMediaItems().size()) {
+        errorBuilder.append("edge (")
+            .append(edge)
+            .append(") target index must be smaller than number of media items.");
+        return false;
+      }
+    }
+    boolean foundRootNode = false;
+    for (Edge edge : scene.getEdges()) {
+      if (edge.getSourceIndex() == 0) {
+        foundRootNode = true;
+        break;
+      }
+    }
+    if (!foundRootNode) {
+      errorBuilder.append("missing root media note, 0-th media is expected to be that node.");
+      return false;
+    }
+    boolean[] isReachable = new boolean[scene.getMediaItems().size()];
+    isReachable[0] = true;
+    for (Edge edge : scene.getEdges()) {
+      isReachable[edge.getTargetIndex().intValue()] = true;
+    }
+    for (int i = 0; i < isReachable.length; i++) {
+      if (!isReachable[i]) {
+        errorBuilder.append(i).append("-th media item is unreachable.");
+        return false;
+      }
     }
     return true;
   }

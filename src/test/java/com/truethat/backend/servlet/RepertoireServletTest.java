@@ -29,7 +29,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     repertoireServlet = new RepertoireServlet();
     repertoireServlet.setDatastore(datastore);
     saveUser(defaultUser);
-    scene = new Scene(defaultUser, NOW, new Photo(""));
+    scene = new Scene(defaultUser, NOW, Collections.singletonList(new Photo("")), null);
   }
 
   @Test(expected = Exception.class)
@@ -104,7 +104,10 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     // Save scenes
     for (int i = 0; i < RepertoireServlet.FETCH_LIMIT + 1; i++) {
       saveScene(new Scene(defaultUser,
-          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()), new Photo("")));
+          Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()),
+          Collections.singletonList(new Photo(
+              "")),
+          null));
     }
     prepareFetch();
     repertoireServlet.doPost(mockRequest, mockResponse);
@@ -120,7 +123,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
       Scene scene = respondedScenes.get(i);
       assertEquals(recentTimestamp - i, scene.getCreated().getSeconds());
       // Should have image url
-      assertNotNull(scene.getMedia().getUrl());
+      assertNotNull(scene.getMediaItems().get(0).getUrl());
     }
   }
 
