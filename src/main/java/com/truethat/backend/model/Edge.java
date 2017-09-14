@@ -7,11 +7,11 @@ import com.google.cloud.datastore.KeyFactory;
 /**
  * Proudly created by ohad on 11/09/2017.
  * <p>
- * Describes relations between media items and the flow in which user will interact with them.
- * {@code <0, 1, HAPPY>} means users that had a {@code HAPPY} reaction to the 0-indexed media item
- * will than view 1-indexed item.
+ * Describes relations between media nodes and the flow in which user will interact with them.
+ * {@code <0, 1, HAPPY>} means users that had a {@code HAPPY} reaction to the 0-indexed media node
+ * will than view 1-indexed node.
  * <p>
- * Note that we regard the {@link Media} item order in {@link Scene#mediaItems} as its index.
+ * Note that we regard the {@link Media} node order in {@link Scene#mediaNodes} as its index.
  */
 public class Edge extends BaseModel {
   /**
@@ -22,13 +22,13 @@ public class Edge extends BaseModel {
   private static final String DATASTORE_REACTION = "reaction";
 
   /**
-   * Index of media source item in {@link Scene#mediaItems}, i.e. {@code photo1} in the above
+   * Index of media source node in {@link Scene#mediaNodes}, i.e. {@code photo1} in the above
    * example.
    */
   private Long sourceIndex;
 
   /**
-   * Index of media target item in {@link Scene#mediaItems}, i.e. {@code video1} in the above
+   * Index of media target node in {@link Scene#mediaNodes}, i.e. {@code video1} in the above
    * example.
    */
   private Long targetIndex;

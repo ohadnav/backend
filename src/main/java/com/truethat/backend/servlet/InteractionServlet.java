@@ -1,8 +1,10 @@
 package com.truethat.backend.servlet;
 
+import com.google.cloud.datastore.Entity;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.InteractionEvent;
+import com.truethat.backend.model.Scene;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -26,7 +28,7 @@ public class InteractionServlet extends BaseServlet {
     InteractionEvent interactionEvent = Util.GSON.fromJson(req.getReader(), InteractionEvent.class);
     if (interactionEvent == null) throw new IOException("Missing interaction event");
     StringBuilder errorBuilder = new StringBuilder();
-    if (!isEventValid(interactionEvent, errorBuilder)) {
+    if (!isValidEvent(interactionEvent, errorBuilder)) {
       throw new IOException(
           "Invalid interaction event: " + errorBuilder + " in " + interactionEvent);
     }
@@ -40,7 +42,7 @@ public class InteractionServlet extends BaseServlet {
   /**
    * @return whether the event has a valid data.
    */
-  @SuppressWarnings("RedundantIfStatement") private boolean isEventValid(
+  @SuppressWarnings("RedundantIfStatement") private boolean isValidEvent(
       InteractionEvent interactionEvent, StringBuilder errorBuilder) {
     if (interactionEvent.getTimestamp() == null) {
       errorBuilder.append("missing timestamp.");
@@ -74,10 +76,25 @@ public class InteractionServlet extends BaseServlet {
       errorBuilder.append("missing scene ID.");
       return false;
     }
-    if (datastore.get(sceneKeyFactory.newKey(interactionEvent.getSceneId())) == null) {
+    if (interactionEvent.getMediaIndex() == null) {
+      errorBuilder.append("missing media index.");
+      return false;
+    }
+    Entity entity = datastore.get(sceneKeyFactory.newKey(interactionEvent.getSceneId()));
+    if (entity == null) {
       errorBuilder.append("scene with ID ")
           .append(interactionEvent.getUserId())
           .append(" not found.");
+      return false;
+    } else if (interactionEvent.getMediaIndex() >= entity.getList(Scene.DATASTORE_MEDIA).size()
+        || interactionEvent.getMediaIndex() < 0) {
+      errorBuilder.append("media index ")
+          .append(interactionEvent.getMediaIndex())
+          .append(" is out of range [")
+          .append(0)
+          .append(" .. ")
+          .append(entity.getList(Scene.DATASTORE_MEDIA).size() - 1)
+          .append("].");
       return false;
     }
     return true;

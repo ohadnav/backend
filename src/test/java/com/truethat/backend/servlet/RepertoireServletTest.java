@@ -123,7 +123,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
       Scene scene = respondedScenes.get(i);
       assertEquals(recentTimestamp - i, scene.getCreated().getSeconds());
       // Should have image url
-      assertNotNull(scene.getMediaItems().get(0).getUrl());
+      assertNotNull(scene.getMediaNodes().get(0).getUrl());
     }
   }
 

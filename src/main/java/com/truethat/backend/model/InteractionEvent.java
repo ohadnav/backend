@@ -18,7 +18,6 @@ import javax.annotation.Nullable;
    * Datastore kind.
    */
   public static final String DATASTORE_KIND = "InteractionEvent";
-  public static final String DATASTORE_SCENE_ID = "sceneId";
   /**
    * Datastore column names.
    */
@@ -26,6 +25,8 @@ import javax.annotation.Nullable;
   private static final String DATASTORE_USER_ID = "userId";
   private static final String DATASTORE_EVENT_TYPE = "eventType";
   private static final String DATASTORE_REACTION = "reaction";
+  public static final String DATASTORE_SCENE_ID = "sceneId";
+  private static final String DATASTORE_MEDIA_INDEX = "mediaIndex";
 
   /**
    * Client UTC timestamp
@@ -53,6 +54,10 @@ import javax.annotation.Nullable;
    * Of the {@link Scene} that was interacted with.
    */
   private Long sceneId;
+  /**
+   * The {@link Media} index within {@link Scene#mediaNodes}.
+   */
+  private Long mediaIndex;
 
   public InteractionEvent(FullEntity entity) {
     super(entity);
@@ -68,6 +73,9 @@ import javax.annotation.Nullable;
     if (entity.contains(DATASTORE_SCENE_ID)) {
       sceneId = entity.getLong(DATASTORE_SCENE_ID);
     }
+    if (entity.contains(DATASTORE_MEDIA_INDEX)) {
+      mediaIndex = entity.getLong(DATASTORE_MEDIA_INDEX);
+    }
     if (entity.contains(DATASTORE_TIMESTAMP)) {
       timestamp = entity.getTimestamp(DATASTORE_TIMESTAMP);
     }
@@ -75,19 +83,22 @@ import javax.annotation.Nullable;
 
   @VisibleForTesting
   public InteractionEvent(Long userId, Long sceneId, Timestamp timestamp, EventType eventType,
-      @Nullable
-          Emotion reaction) {
+      @Nullable Emotion reaction, Long mediaIndex) {
     this.timestamp = timestamp;
     this.userId = userId;
     this.reaction = reaction;
     this.eventType = eventType;
     this.sceneId = sceneId;
+    this.mediaIndex = mediaIndex;
   }
 
   @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
     FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
     if (sceneId != null) {
       builder.set(InteractionEvent.DATASTORE_SCENE_ID, sceneId);
+    }
+    if (mediaIndex != null) {
+      builder.set(InteractionEvent.DATASTORE_MEDIA_INDEX, mediaIndex);
     }
     if (timestamp != null) {
       builder.set(InteractionEvent.DATASTORE_TIMESTAMP, timestamp);
@@ -111,6 +122,7 @@ import javax.annotation.Nullable;
     result = 31 * result + (reaction != null ? reaction.hashCode() : 0);
     result = 31 * result + (eventType != null ? eventType.hashCode() : 0);
     result = 31 * result + (sceneId != null ? sceneId.hashCode() : 0);
+    result = 31 * result + (mediaIndex != null ? mediaIndex.hashCode() : 0);
     return result;
   }
 
@@ -121,13 +133,17 @@ import javax.annotation.Nullable;
 
     InteractionEvent that = (InteractionEvent) o;
 
-    if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) {
+    if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null)
       return false;
-    }
     if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
     if (reaction != that.reaction) return false;
     if (eventType != that.eventType) return false;
-    return sceneId != null ? sceneId.equals(that.sceneId) : that.sceneId == null;
+    if (sceneId != null ? !sceneId.equals(that.sceneId) : that.sceneId != null) return false;
+    return mediaIndex != null ? mediaIndex.equals(that.mediaIndex) : that.mediaIndex == null;
+  }
+
+  public Long getMediaIndex() {
+    return mediaIndex;
   }
 
   public Long getUserId() {

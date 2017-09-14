@@ -6,9 +6,12 @@ package com.truethat.backend.model;
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/Emotion.java</a>
  * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/Emotion.swift</a>
  */
-@SuppressWarnings("unused") public enum Emotion {
+// Next available - 5
+public enum Emotion {
   HAPPY(1),
-  SAD(2);
+  FEAR(2),
+  SURPRISE(3),
+  DISGUST(4);
 
   private int code;
 

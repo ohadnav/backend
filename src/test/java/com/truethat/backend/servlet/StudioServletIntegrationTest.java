@@ -100,7 +100,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
     when(mockScenePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(scene)));
-    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "_0")).thenReturn(mockFilePart);
+    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "0")).thenReturn(mockFilePart);
     when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(mockScenePart);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
@@ -112,12 +112,12 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
         .collect(toList())
         .get(0);
     // Asserts that the scene's image is saved, and matches the uploaded one.
-    TestUtil.assertUrl(saved.getMediaItems().get(0).getUrl(), HttpURLConnection.HTTP_OK,
+    TestUtil.assertUrl(saved.getMediaNodes().get(0).getUrl(), HttpURLConnection.HTTP_OK,
         new FileInputStream(new File(fileName)));
     scene.setDirector(null);
     scene.setDirectorId(director.getId());
     scene.setId(saved.getId());
-    scene.getMediaItems().get(0).setUrl(saved.getMediaItems().get(0).getUrl());
+    scene.getMediaNodes().get(0).setUrl(saved.getMediaNodes().get(0).getUrl());
     assertEquals(scene, saved);
   }
 
@@ -134,7 +134,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
     when(mockScenePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(scene)));
-    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "_0")).thenReturn(mockFilePart);
+    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "0")).thenReturn(mockFilePart);
     when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(mockScenePart);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
@@ -148,11 +148,11 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     scene.setDirector(null);
     scene.setDirectorId(director.getId());
     scene.setId(saved.getId());
-    scene.getMediaItems().get(0).setUrl(saved.getMediaItems().get(0).getUrl());
+    scene.getMediaNodes().get(0).setUrl(saved.getMediaNodes().get(0).getUrl());
     assertEquals(scene, saved);
     // Asserts that the video is saved. We dont assert the uploaded file matches the
     // original one, as it streamed to the client, and so cannot be fully matched.
-    TestUtil.assertUrl(saved.getMediaItems().get(0).getUrl(), HttpURLConnection.HTTP_OK, null);
+    TestUtil.assertUrl(saved.getMediaNodes().get(0).getUrl(), HttpURLConnection.HTTP_OK, null);
   }
 
   private void initResponseMock() throws Exception {

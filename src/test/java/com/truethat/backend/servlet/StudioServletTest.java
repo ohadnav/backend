@@ -55,7 +55,7 @@ public class StudioServletTest extends BaseServletTestSuite {
     scene = new Scene(defaultUser, NOW,
         Arrays.asList(new Photo(""), new Photo(""), new Video("")),
         Arrays.asList(new Edge(0L, 1L, Emotion.HAPPY),
-            new Edge(0L, 2L, Emotion.SAD)));
+            new Edge(0L, 2L, Emotion.FEAR)));
     saveScene(scene);
     Scene saved = new Scene(
         datastore.run(Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND).build())
@@ -104,8 +104,8 @@ public class StudioServletTest extends BaseServletTestSuite {
     saveScene(new Scene(defaultUser, NOW,
         Arrays.asList(new Photo(""), new Photo(""), new Video("")),
         Arrays.asList(new Edge(0L, 1L, Emotion.HAPPY),
-            new Edge(0L, 2L, Emotion.SAD),
-            new Edge(null, 2L, Emotion.SAD))));
+            new Edge(0L, 2L, Emotion.FEAR),
+            new Edge(null, 2L, Emotion.FEAR))));
   }
 
   @Test(expected = IOException.class)
@@ -113,8 +113,8 @@ public class StudioServletTest extends BaseServletTestSuite {
     saveScene(new Scene(defaultUser, NOW,
         Arrays.asList(new Photo(""), new Photo(""), new Video("")),
         Arrays.asList(new Edge(0L, 1L, Emotion.HAPPY),
-            new Edge(0L, 2L, Emotion.SAD),
-            new Edge(0L, null, Emotion.SAD))));
+            new Edge(0L, 2L, Emotion.FEAR),
+            new Edge(0L, null, Emotion.FEAR))));
   }
 
   @Test(expected = IOException.class)
@@ -122,7 +122,7 @@ public class StudioServletTest extends BaseServletTestSuite {
     saveScene(new Scene(defaultUser, NOW,
         Arrays.asList(new Photo(""), new Photo(""), new Video("")),
         Arrays.asList(new Edge(0L, 1L, Emotion.HAPPY),
-            new Edge(0L, 2L, Emotion.SAD),
+            new Edge(0L, 2L, Emotion.FEAR),
             new Edge(1L, 2L, null))));
   }
 
@@ -137,7 +137,7 @@ public class StudioServletTest extends BaseServletTestSuite {
   public void sceneNotSaved_missingMediaPart() throws Exception {
     prepareSceneSave(new Scene(defaultUser, NOW,
         Arrays.asList(new Photo(""), new Photo("")), null));
-    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX) + "_1").thenReturn(null);
+    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX) + "1").thenReturn(null);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
   }

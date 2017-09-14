@@ -61,7 +61,8 @@ public class StudioServlet extends BaseServlet {
    * {@link Scene} The request is expected to be multipart HTTP request with multiple parts of the
    * {@link Scene} and its {@link Media} items.
    *
-   * @param req multipart request that contains {@link Scene} metadata and {@link Media} files parts.
+   * @param req multipart request that contains {@link Scene} metadata and {@link Media} files
+   *            parts.
    */
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -118,21 +119,21 @@ public class StudioServlet extends BaseServlet {
       errorBuilder.append("missing created timestamp");
       return false;
     }
-    // Validate edges items
-    if (scene.getMediaItems().size() <= 1 && (scene.getEdges() != null && !scene.getEdges()
+    // Validate edges
+    if (scene.getMediaNodes().size() <= 1 && (scene.getEdges() != null && !scene.getEdges()
         .isEmpty())) {
       errorBuilder.append("edges should be empty or null when no multiple media items exists.");
       return false;
     }
     // If there aren't multiple media items there is no need to validate edges.
-    if (scene.getMediaItems().size() <= 1) {
+    if (scene.getMediaNodes().size() <= 1) {
       return true;
     }
-    if (scene.getMediaItems().size() > 1 && scene.getEdges() == null) {
+    if (scene.getMediaNodes().size() > 1 && scene.getEdges() == null) {
       errorBuilder.append("edges cannot be null when multiple media items exists.");
       return false;
     }
-    if (scene.getMediaItems().size() > 1 && scene.getEdges().isEmpty()) {
+    if (scene.getMediaNodes().size() > 1 && scene.getEdges().isEmpty()) {
       errorBuilder.append("edges cannot be empty when multiple media items exists.");
       return false;
     }
@@ -167,7 +168,7 @@ public class StudioServlet extends BaseServlet {
             .append(") source index mustn't be negative");
         return false;
       }
-      if (edge.getTargetIndex() >= scene.getMediaItems().size()) {
+      if (edge.getTargetIndex() >= scene.getMediaNodes().size()) {
         errorBuilder.append("edge (")
             .append(edge)
             .append(") target index must be smaller than number of media items.");
@@ -185,14 +186,14 @@ public class StudioServlet extends BaseServlet {
       errorBuilder.append("missing root media note, 0-th media is expected to be that node.");
       return false;
     }
-    boolean[] isReachable = new boolean[scene.getMediaItems().size()];
+    boolean[] isReachable = new boolean[scene.getMediaNodes().size()];
     isReachable[0] = true;
     for (Edge edge : scene.getEdges()) {
       isReachable[edge.getTargetIndex().intValue()] = true;
     }
     for (int i = 0; i < isReachable.length; i++) {
       if (!isReachable[i]) {
-        errorBuilder.append(i).append("-th media item is unreachable.");
+        errorBuilder.append(i).append("-th media node is unreachable.");
         return false;
       }
     }

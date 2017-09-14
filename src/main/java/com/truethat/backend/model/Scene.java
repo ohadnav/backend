@@ -41,12 +41,12 @@ public class Scene extends BaseModel {
    */
   public static final String DATASTORE_CREATED = "created";
   public static final String DATASTORE_DIRECTOR_ID = "directorId";
-  private static final String DATASTORE_MEDIA = "media";
+  public static final String DATASTORE_MEDIA = "media";
   private static final String DATASTORE_EDGES = "edge";
   /**
    * The media items of this scene.
    */
-  private List<Media> mediaItems;
+  private List<Media> mediaNodes;
   /**
    * The interaction flow of users with this scene.
    */
@@ -88,7 +88,7 @@ public class Scene extends BaseModel {
     if (entity.contains(DATASTORE_MEDIA)) {
       @SuppressWarnings("unchecked") List<EntityValue> mediaEntities =
           entity.getList(DATASTORE_MEDIA);
-      mediaItems = mediaEntities.stream()
+      mediaNodes = mediaEntities.stream()
           .map(entityValue -> Media.fromEntity(entityValue.get()))
           .collect(toList());
     }
@@ -100,11 +100,11 @@ public class Scene extends BaseModel {
     }
   }
 
-  @VisibleForTesting public Scene(User director, Timestamp created, List<Media> mediaItems,
+  @VisibleForTesting public Scene(User director, Timestamp created, List<Media> mediaNodes,
       List<Edge> edges) {
     this.director = director;
     this.created = created;
-    this.mediaItems = mediaItems;
+    this.mediaNodes = mediaNodes;
     this.edges = edges;
   }
 
@@ -112,8 +112,12 @@ public class Scene extends BaseModel {
   @SuppressWarnings("unused") Scene() {
   }
 
-  public List<Media> getMediaItems() {
-    return mediaItems;
+  public List<Media> getMediaNodes() {
+    return mediaNodes;
+  }
+
+  public void setMediaNodes(List<Media> mediaNodes) {
+    this.mediaNodes = mediaNodes;
   }
 
   public boolean isViewed() {
@@ -166,8 +170,25 @@ public class Scene extends BaseModel {
     this.created = created;
   }
 
-  public void setMediaItems(List<Media> mediaItems) {
-    this.mediaItems = mediaItems;
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
+    if (created != null) {
+      builder.set(DATASTORE_CREATED, created);
+    }
+    if (getDirectorId() != null) {
+      builder.set(DATASTORE_DIRECTOR_ID, getDirectorId());
+    }
+    if (mediaNodes != null && !mediaNodes.isEmpty()) {
+      builder.set(DATASTORE_MEDIA, mediaNodes.stream()
+          .map(media -> new EntityValue(media.toEntityBuilder(keyFactory).build()))
+          .collect(toList()));
+    }
+    if (edges != null && !edges.isEmpty()) {
+      builder.set(DATASTORE_EDGES, edges.stream()
+          .map(edge -> new EntityValue(edge.toEntityBuilder(keyFactory).build()))
+          .collect(toList()));
+    }
+    return builder;
   }
 
   @Override public int hashCode() {
@@ -199,27 +220,6 @@ public class Scene extends BaseModel {
     return director != null ? director.equals(scene.director) : scene.director == null;
   }
 
-  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
-    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
-    if (created != null) {
-      builder.set(DATASTORE_CREATED, created);
-    }
-    if (getDirectorId() != null) {
-      builder.set(DATASTORE_DIRECTOR_ID, getDirectorId());
-    }
-    if (mediaItems != null && !mediaItems.isEmpty()) {
-      builder.set(DATASTORE_MEDIA, mediaItems.stream()
-          .map(media -> new EntityValue(media.toEntityBuilder(keyFactory).build()))
-          .collect(toList()));
-    }
-    if (edges != null && !edges.isEmpty()) {
-      builder.set(DATASTORE_EDGES, edges.stream()
-          .map(edge -> new EntityValue(edge.toEntityBuilder(keyFactory).build()))
-          .collect(toList()));
-    }
-    return builder;
-  }
-
   public List<Edge> getEdges() {
     return edges;
   }
@@ -229,15 +229,14 @@ public class Scene extends BaseModel {
   }
 
   /**
-
    * Saves this scene to datastore and storage.
    *
    * @param req     in which the scene is described.
    * @param servlet from which the client requested the save.
    */
   public void save(HttpServletRequest req, StudioServlet servlet) throws Exception {
-    if (mediaItems != null) {
-      for (int i = 0; i < mediaItems.size(); i++) {
+    if (mediaNodes != null) {
+      for (int i = 0; i < mediaNodes.size(); i++) {
         saveMedia(i, req, servlet);
       }
     }
@@ -247,10 +246,11 @@ public class Scene extends BaseModel {
   }
 
   /**
-   * Saves {@link #mediaItems} to storage.
-   *  @param mediaIndex   to save.
-   * @param req     in which the scene is described.
-   * @param servlet from which the client requested the save.
+   * Saves {@link #mediaNodes} to storage.
+   *
+   * @param mediaIndex to save.
+   * @param req        in which the scene is described.
+   * @param servlet    from which the client requested the save.
    */
   private void saveMedia(int mediaIndex, HttpServletRequest req,
       StudioServlet servlet)
@@ -262,12 +262,12 @@ public class Scene extends BaseModel {
         part.getContentType(),
         ByteStreams.toByteArray(part.getInputStream()),
         servlet.getBucketName());
-    mediaItems.get(mediaIndex).setUrl(servlet.getStorageClient().getPublicLink(blobInfo));
+    mediaNodes.get(mediaIndex).setUrl(servlet.getStorageClient().getPublicLink(blobInfo));
   }
 
   /**
    * @param mediaIndex to get a save path for
-   * @param part  of {@link #mediaItems}
+   * @param part       of {@link #mediaNodes}
    *
    * @return sub path within the storage in which to save {@code media} content.
    */
@@ -291,6 +291,6 @@ public class Scene extends BaseModel {
    * @return expected HTTP multipart name for media content of the {@code mediaIndex}-th item.
    */
   private String generatePartName(int mediaIndex) {
-    return Media.MEDIA_PART_PREFIX + "_" + mediaIndex;
+    return Media.MEDIA_PART_PREFIX + mediaIndex;
   }
 }

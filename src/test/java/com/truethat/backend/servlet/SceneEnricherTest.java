@@ -12,7 +12,7 @@ import java.util.Collections;
 import org.junit.Test;
 
 import static com.truethat.backend.model.Emotion.HAPPY;
-import static com.truethat.backend.model.Emotion.SAD;
+import static com.truethat.backend.model.Emotion.SURPRISE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -47,7 +47,7 @@ public class SceneEnricherTest extends BaseServletTestSuite {
   @Test public void enrichScene_reaction() throws Exception {
     InteractionEvent interactionEvent =
         new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
-            REACTION);
+            REACTION, 0L);
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
@@ -61,17 +61,18 @@ public class SceneEnricherTest extends BaseServletTestSuite {
     // Saves a happy reaction.
     InteractionEvent interactionEvent =
         new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
-            HAPPY);
+            HAPPY, 0L);
     saveInteraction(interactionEvent);
     // Saves a sad reaction.
     interactionEvent =
         new InteractionEvent(friend.getId(), scene.getId(), NOW, EventType.REACTION,
-            SAD);
+            SURPRISE, 0L);
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
     enricher.enrichScenes(Collections.singletonList(scene), defaultUser);
-    assertTrue(Maps.difference(ImmutableMap.of(HAPPY, 1L, SAD, 1L), scene.getReactionCounters())
+    assertTrue(
+        Maps.difference(ImmutableMap.of(HAPPY, 1L, SURPRISE, 1L), scene.getReactionCounters())
         .areEqual());
   }
 
@@ -79,12 +80,12 @@ public class SceneEnricherTest extends BaseServletTestSuite {
     // Saves a happy reaction.
     InteractionEvent interactionEvent =
         new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
-            HAPPY);
+            HAPPY, 0L);
     saveInteraction(interactionEvent);
     // Saves a sad reaction.
     interactionEvent =
         new InteractionEvent(friend.getId(), scene.getId(), NOW, EventType.REACTION,
-            HAPPY);
+            HAPPY, 0L);
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
@@ -95,7 +96,7 @@ public class SceneEnricherTest extends BaseServletTestSuite {
   @Test public void enrichScene_reactionUniqueIds() throws Exception {
     InteractionEvent interactionEvent =
         new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
-            REACTION);
+            REACTION, 0L);
     // Saves the event.
     saveInteraction(interactionEvent);
     // Saves the event.
@@ -109,7 +110,7 @@ public class SceneEnricherTest extends BaseServletTestSuite {
   @Test public void enrichScene_view() throws Exception {
     InteractionEvent interactionEvent =
         new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.VIEW,
-            null);
+            null, 0L);
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene
@@ -120,7 +121,7 @@ public class SceneEnricherTest extends BaseServletTestSuite {
   @Test public void enrichScene_userIsDirector() throws Exception {
     InteractionEvent interactionEvent =
         new InteractionEvent(director.getId(), scene.getId(), NOW, EventType.REACTION,
-            REACTION);
+            REACTION, 0L);
     // Saves the event.
     saveInteraction(interactionEvent);
     // Enriches the scene

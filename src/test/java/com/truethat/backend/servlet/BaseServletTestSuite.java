@@ -125,20 +125,20 @@ public class BaseServletTestSuite {
    * @param scene to save
    */
   void prepareSceneSave(Scene scene) throws Exception {
-    for (int i = 0; i < scene.getMediaItems().size(); i++) {
+    for (int i = 0; i < scene.getMediaNodes().size(); i++) {
       File file = null;
       Part mockFilePart = mock(Part.class);
-      if (scene.getMediaItems().get(i) instanceof Photo) {
+      if (scene.getMediaNodes().get(i) instanceof Photo) {
         file = new File("src/test/resources/servlet/1x1_pixel.jpg");
         when(mockFilePart.getContentType()).thenReturn("image/jpg");
-      } else if (scene.getMediaItems().get(i) instanceof Video) {
+      } else if (scene.getMediaNodes().get(i) instanceof Video) {
         file = new File("src/test/resources/servlet/wink.mp4");
         when(mockFilePart.getContentType()).thenReturn("video/mp4");
       }
       if (file != null) {
         when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(file));
       }
-      when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "_" + i)).thenReturn(mockFilePart);
+      when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + i)).thenReturn(mockFilePart);
     }
     when(mockScenePart.getInputStream()).thenReturn(
         TestUtil.toInputStream(Util.GSON.toJson(scene)));
@@ -158,9 +158,9 @@ public class BaseServletTestSuite {
     Scene responded = Util.GSON.fromJson(responseWriter.toString(), Scene.class);
     scene.setId(responded.getId());
     scene.setCreated(responded.getCreated());
-    // Updates edges and media items
+    // Updates edges and media nodes
     scene.setEdges(responded.getEdges());
-    scene.setMediaItems(responded.getMediaItems());
+    scene.setMediaNodes(responded.getMediaNodes());
   }
 
   /**

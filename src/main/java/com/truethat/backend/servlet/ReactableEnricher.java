@@ -39,7 +39,7 @@ class SceneEnricher {
    * Enriches {@link Scene}s with data of {@link User} and {@link InteractionEvent}s.
    *
    * @param scenes to enrichScenes
-   * @param user       for which to enrichScenes the scenes.
+   * @param user   for which to enrichScenes the scenes.
    */
   void enrichScenes(List<Scene> scenes,
       User user) {
@@ -73,7 +73,7 @@ class SceneEnricher {
    * Enriches {@link Scene}s with data of {@link Scene#director} first and last names.
    *
    * @param scenes to enrichScenes
-   * @param user       for which to enrichScenes the scenes.
+   * @param user   for which to enrichScenes the scenes.
    */
   private void enrichEvents(List<Scene> scenes, User user) {
     for (Scene scene : scenes) {

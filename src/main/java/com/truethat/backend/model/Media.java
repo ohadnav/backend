@@ -24,7 +24,7 @@ public class Media extends BaseModel {
    * As {@link Scene} can have more than one {@link Media} item their names will have this prefix
    * followed by "_" and {@link #id}.
    */
-  public static final String MEDIA_PART_PREFIX = "media";
+  public static final String MEDIA_PART_PREFIX = "media_";
   /**
    * Sub path for media items within the storage bucket.
    */
