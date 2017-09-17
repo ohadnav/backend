@@ -32,7 +32,7 @@ class SceneEnricher {
 
   SceneEnricher(Datastore datastore) {
     this.datastore = datastore;
-    userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
+    userKeyFactory = datastore.newKeyFactory().setKind(User.KIND);
   }
 
   /**
@@ -78,8 +78,8 @@ class SceneEnricher {
   private void enrichEvents(List<Scene> scenes, User user) {
     for (Scene scene : scenes) {
       boolean isUserDirector = Objects.equals(user.getId(), scene.getDirectorId());
-      Query<Entity> query = Query.newEntityQueryBuilder().setKind(InteractionEvent.DATASTORE_KIND)
-          .setFilter(StructuredQuery.PropertyFilter.eq(InteractionEvent.DATASTORE_SCENE_ID,
+      Query<Entity> query = Query.newEntityQueryBuilder().setKind(InteractionEvent.KIND)
+          .setFilter(StructuredQuery.PropertyFilter.eq(InteractionEvent.COLUMN_SCENE_ID,
               scene.getId())).build();
       List<InteractionEvent> interactionEvents = Lists.newArrayList(datastore.run(query))
           .stream()

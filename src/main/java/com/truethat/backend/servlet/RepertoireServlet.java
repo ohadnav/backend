@@ -41,11 +41,11 @@ public class RepertoireServlet extends BaseServlet {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     if (user == null) throw new IOException("Missing user");
     StringBuilder errorBuilder = new StringBuilder();
-    if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
+    if (!isValidUser(this, user, errorBuilder)) {
       throw new IOException("Invalid user: " + errorBuilder + ", input: " + user);
     }
-    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND)
-        .setFilter(StructuredQuery.PropertyFilter.eq(Scene.DATASTORE_DIRECTOR_ID, user.getId()))
+    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Scene.KIND)
+        .setFilter(StructuredQuery.PropertyFilter.eq(Scene.COLUMN_DIRECTOR_ID, user.getId()))
         .setLimit(FETCH_LIMIT)
         .build();
     List<Scene> scenes = Lists.newArrayList(datastore.run(query))

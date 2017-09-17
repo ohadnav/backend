@@ -3,8 +3,9 @@ package com.truethat.backend.model;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
-import com.google.cloud.datastore.KeyFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.servlet.BaseServlet;
 
 /**
  * Proudly created by ohad on 23/08/2017.
@@ -18,15 +19,19 @@ public abstract class BaseModel {
   BaseModel() {
   }
 
+  @VisibleForTesting BaseModel(Long id) {
+    this.id = id;
+  }
+
   BaseModel(FullEntity entity) {
     if (entity instanceof Entity && entity.getKey() != null) {
       id = ((Entity) entity).getKey().getId();
     }
   }
 
-  public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
+  public FullEntity.Builder<IncompleteKey> toEntityBuilder(BaseServlet servlet) {
     FullEntity.Builder<IncompleteKey> builder = Entity.newBuilder();
-    builder.setKey(keyFactory.newKey());
+    builder.setKey(servlet.getKeyFactory(getKind()).newKey());
     return builder;
   }
 
@@ -55,4 +60,6 @@ public abstract class BaseModel {
   public String toString() {
     return Util.GSON.toJson(this);
   }
+
+  abstract String getKind();
 }

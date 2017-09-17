@@ -80,8 +80,8 @@ public class BaseServletTestSuite {
     // Initialize datastore
     HELPER.reset();
     datastore = HELPER.getOptions().getService();
-    userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
-    eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
+    userKeyFactory = datastore.newKeyFactory().setKind(User.KIND);
+    eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.KIND);
     emptyDatastore(null);
     // Initialize Servlets
     resetResponseMock();

@@ -5,6 +5,7 @@ import com.truethat.backend.common.Util;
 import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.InteractionEvent;
 import com.truethat.backend.model.Scene;
+import com.truethat.backend.model.User;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -36,7 +37,7 @@ public class InteractionServlet extends BaseServlet {
     resp.getWriter()
         .print(Util.GSON.toJson(
             new InteractionEvent(
-                datastore.add(interactionEvent.toEntityBuilder(eventKeyFactory).build()))));
+                datastore.add(interactionEvent.toEntityBuilder(this).build()))));
   }
 
   /**
@@ -66,7 +67,7 @@ public class InteractionServlet extends BaseServlet {
       errorBuilder.append("missing user ID.");
       return false;
     }
-    if (datastore.get(userKeyFactory.newKey(interactionEvent.getUserId())) == null) {
+    if (datastore.get(getKeyFactory(User.KIND).newKey(interactionEvent.getUserId())) == null) {
       errorBuilder.append("user with ID ")
           .append(interactionEvent.getUserId())
           .append(" not found.");
@@ -76,24 +77,24 @@ public class InteractionServlet extends BaseServlet {
       errorBuilder.append("missing scene ID.");
       return false;
     }
-    if (interactionEvent.getMediaIndex() == null) {
+    if (interactionEvent.getMediaId() == null) {
       errorBuilder.append("missing media index.");
       return false;
     }
-    Entity entity = datastore.get(sceneKeyFactory.newKey(interactionEvent.getSceneId()));
+    Entity entity = datastore.get(getKeyFactory(Scene.KIND).newKey(interactionEvent.getSceneId()));
     if (entity == null) {
       errorBuilder.append("scene with ID ")
           .append(interactionEvent.getUserId())
           .append(" not found.");
       return false;
-    } else if (interactionEvent.getMediaIndex() >= entity.getList(Scene.DATASTORE_MEDIA).size()
-        || interactionEvent.getMediaIndex() < 0) {
+    } else if (interactionEvent.getMediaId() >= entity.getList(Scene.COLUMN_MEDIA).size()
+        || interactionEvent.getMediaId() < 0) {
       errorBuilder.append("media index ")
-          .append(interactionEvent.getMediaIndex())
+          .append(interactionEvent.getMediaId())
           .append(" is out of range [")
           .append(0)
           .append(" .. ")
-          .append(entity.getList(Scene.DATASTORE_MEDIA).size() - 1)
+          .append(entity.getList(Scene.COLUMN_MEDIA).size() - 1)
           .append("].");
       return false;
     }

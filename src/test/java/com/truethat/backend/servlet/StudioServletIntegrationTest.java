@@ -93,7 +93,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     initResponseMock();
     // Saves scene
     Scene scene =
-        new Scene(director, Timestamp.now(), Collections.singletonList(new Photo("")), null);
+        new Scene(director, Timestamp.now(), Collections.singletonList(new Photo(0L, "")), null);
     // Initializing request mock
     String fileName = "src/test/resources/servlet/1x1_pixel.jpg";
     when(mockFilePart.getContentType()).thenReturn("image/jpg");
@@ -106,7 +106,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     studioServlet.doPost(mockRequest, mockResponse);
     // Asserts that the scene was saved into the Datastore.
     Scene saved = Lists.newArrayList(datastore.run(
-        Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND).build()))
+        Query.newEntityQueryBuilder().setKind(Scene.KIND).build()))
         .stream()
         .map(Scene::new)
         .collect(toList())
@@ -127,7 +127,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     initResponseMock();
     // Saves scene
     Scene scene =
-        new Scene(director, Timestamp.now(), Collections.singletonList(new Video("")), null);
+        new Scene(director, Timestamp.now(), Collections.singletonList(new Video(0L, "")), null);
     // Initializing request mock
     String fileName = "src/test/resources/servlet/wink.mp4";
     when(mockFilePart.getContentType()).thenReturn("video/mp4");
@@ -140,7 +140,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     studioServlet.doPost(mockRequest, mockResponse);
     // Asserts that the scene was saved into the Datastore.
     Scene saved = Lists.newArrayList(datastore.run(
-        Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND).build()))
+        Query.newEntityQueryBuilder().setKind(Scene.KIND).build()))
         .stream()
         .map(Scene::new)
         .collect(toList())

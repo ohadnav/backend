@@ -20,7 +20,7 @@ public class UtilTest {
   private static final Timestamp TIMESTAMP = Timestamp.of(new Date(1));
   private static final String UTC_DATE = "\"1970-01-01T00:00:00.001+0000\"";
   private static final Media MEDIA =
-      new Photo("baba.ganush.com");
+      new Photo(0L, "baba.ganush.com");
 
   @Test
   public void inputStreamToString() throws Exception {

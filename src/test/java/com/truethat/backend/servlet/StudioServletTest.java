@@ -24,14 +24,14 @@ public class StudioServletTest extends BaseServletTestSuite {
   @Override public void setUp() throws Exception {
     super.setUp();
     saveUser(defaultUser);
-    scene = new Scene(defaultUser, NOW, Collections.singletonList(new Photo("")), null);
+    scene = new Scene(defaultUser, NOW, Collections.singletonList(new Photo(0L, "")), null);
   }
 
   @Test
   public void photoSaved() throws Exception {
     saveScene(scene);
     Scene saved = new Scene(
-        datastore.run(Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND).build())
+        datastore.run(Query.newEntityQueryBuilder().setKind(Scene.KIND).build())
             .next());
     scene.setDirector(null);
     scene.setDirectorId(defaultUser.getId());
@@ -40,10 +40,10 @@ public class StudioServletTest extends BaseServletTestSuite {
 
   @Test
   public void videoSaved() throws Exception {
-    scene = new Scene(defaultUser, NOW, Collections.singletonList(new Video("")), null);
+    scene = new Scene(defaultUser, NOW, Collections.singletonList(new Video(0L, "")), null);
     saveScene(scene);
     Scene saved = new Scene(
-        datastore.run(Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND).build())
+        datastore.run(Query.newEntityQueryBuilder().setKind(Scene.KIND).build())
             .next());
     scene.setDirector(null);
     scene.setDirectorId(defaultUser.getId());
@@ -51,14 +51,14 @@ public class StudioServletTest extends BaseServletTestSuite {
   }
 
   @Test
-  public void saveGraph() throws Exception {
+  public void saveTree() throws Exception {
     scene = new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo(""), new Video("")),
+        Arrays.asList(new Photo(0L, ""), new Photo(1L, ""), new Video(2L, "")),
         Arrays.asList(new Edge(0L, 1L, Emotion.HAPPY),
             new Edge(0L, 2L, Emotion.FEAR)));
     saveScene(scene);
     Scene saved = new Scene(
-        datastore.run(Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND).build())
+        datastore.run(Query.newEntityQueryBuilder().setKind(Scene.KIND).build())
             .next());
     scene.setDirector(null);
     scene.setDirectorId(defaultUser.getId());
@@ -66,77 +66,70 @@ public class StudioServletTest extends BaseServletTestSuite {
   }
 
   @Test(expected = IOException.class)
-  public void saveGraphInvalid_outOfRangeTargetIndex() throws Exception {
+  public void saveTreeInvalid_targetIdHasNoMatchingMedia() throws Exception {
     saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo("")),
-        Collections.singletonList(new Edge(0L, 3L, Emotion.HAPPY))));
+        Arrays.asList(new Photo(10L, ""), new Photo(20L, "")),
+        Collections.singletonList(new Edge(10L, 1L, Emotion.HAPPY))));
   }
 
   @Test(expected = IOException.class)
-  public void saveGraphInvalid_outOfRangeSourceIndex() throws Exception {
+  public void saveTreeInvalid_sourceIdHasNoMatchingMedia() throws Exception {
     saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo("")),
+        Arrays.asList(new Photo(10L, ""), new Photo(20L, "")),
         Collections.singletonList(new Edge(-1L, 1L, Emotion.HAPPY))));
   }
 
   @Test(expected = IOException.class)
-  public void saveGraphInvalid_missingEdges() throws Exception {
+  public void saveTreeInvalid_missingEdges() throws Exception {
     saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo("")), null));
+        Arrays.asList(new Photo(0L, ""), new Photo(1L, "")), null));
   }
 
   @Test(expected = IOException.class)
-  public void saveGraphInvalid_unreachableMedia() throws Exception {
+  public void saveTreeInvalid_invalidFlowTree() throws Exception {
     saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo(""), new Video("")),
+        Arrays.asList(new Photo(0L, ""), new Photo(1L, ""), new Video(2L, "")),
         Collections.singletonList(new Edge(0L, 1L, Emotion.HAPPY))));
   }
 
   @Test(expected = IOException.class)
-  public void saveGraphInvalid_edgeTargetIndexIsSmaller() throws Exception {
+  public void saveTreeInvalid_missingSourceIndex() throws Exception {
     saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo(""), new Video("")),
-        Collections.singletonList(new Edge(1L, 0L, Emotion.HAPPY))));
-  }
-
-  @Test(expected = IOException.class)
-  public void saveGraphInvalid_missingSourceIndex() throws Exception {
-    saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo(""), new Video("")),
+        Arrays.asList(new Photo(0L, ""), new Photo(1L, ""), new Video(2L, "")),
         Arrays.asList(new Edge(0L, 1L, Emotion.HAPPY),
             new Edge(0L, 2L, Emotion.FEAR),
             new Edge(null, 2L, Emotion.FEAR))));
   }
 
   @Test(expected = IOException.class)
-  public void saveGraphInvalid_missingTargetIndex() throws Exception {
+  public void saveTreeInvalid_missingTargetIndex() throws Exception {
     saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo(""), new Video("")),
+        Arrays.asList(new Photo(0L, ""), new Photo(1L, ""), new Video(2L, "")),
         Arrays.asList(new Edge(0L, 1L, Emotion.HAPPY),
             new Edge(0L, 2L, Emotion.FEAR),
             new Edge(0L, null, Emotion.FEAR))));
   }
 
   @Test(expected = IOException.class)
-  public void saveGraphInvalid_missingEdgeReaction() throws Exception {
+  public void saveTreeInvalid_missingEdgeReaction() throws Exception {
     saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo(""), new Video("")),
+        Arrays.asList(new Photo(0L, ""), new Photo(1L, ""), new Video(2L, "")),
         Arrays.asList(new Edge(0L, 1L, Emotion.HAPPY),
             new Edge(0L, 2L, Emotion.FEAR),
             new Edge(1L, 2L, null))));
   }
 
   @Test(expected = IOException.class)
-  public void saveGraphInvalid_edgeTargetIndexEqualsSource() throws Exception {
+  public void saveTreeInvalid_edgeTargetIndexEqualsSource() throws Exception {
     saveScene(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo(""), new Video("")),
+        Arrays.asList(new Photo(0L, ""), new Photo(1L, ""), new Video(2L, "")),
         Collections.singletonList(new Edge(0L, 0L, Emotion.HAPPY))));
   }
 
   @Test(expected = IOException.class)
   public void sceneNotSaved_missingMediaPart() throws Exception {
     prepareSceneSave(new Scene(defaultUser, NOW,
-        Arrays.asList(new Photo(""), new Photo("")), null));
+        Arrays.asList(new Photo(0L, ""), new Photo(1L, "")), null));
     when(mockRequest.getPart(Media.MEDIA_PART_PREFIX) + "1").thenReturn(null);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);

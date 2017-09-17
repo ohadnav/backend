@@ -5,12 +5,14 @@ import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.EntityValue;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
-import com.google.cloud.datastore.KeyFactory;
+import com.google.cloud.datastore.Key;
 import com.google.cloud.storage.BlobInfo;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
+import com.truethat.backend.servlet.BaseServlet;
 import com.truethat.backend.servlet.StudioServlet;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -35,14 +37,14 @@ public class Scene extends BaseModel {
   /**
    * Datastore kind.
    */
-  public static final String DATASTORE_KIND = "Scene";
+  public static final String KIND = "Scene";
   /**
    * Datastore column names.
    */
-  public static final String DATASTORE_CREATED = "created";
-  public static final String DATASTORE_DIRECTOR_ID = "directorId";
-  public static final String DATASTORE_MEDIA = "media";
-  private static final String DATASTORE_EDGES = "edge";
+  public static final String COLUMN_CREATED = "created";
+  public static final String COLUMN_DIRECTOR_ID = "directorId";
+  public static final String COLUMN_MEDIA = "media";
+  private static final String COLUMN_EDGES = "edge";
   /**
    * The media items of this scene.
    */
@@ -79,22 +81,22 @@ public class Scene extends BaseModel {
 
   public Scene(FullEntity entity) {
     super(entity);
-    if (entity.contains(DATASTORE_DIRECTOR_ID)) {
-      directorId = entity.getLong(DATASTORE_DIRECTOR_ID);
+    if (entity.contains(COLUMN_DIRECTOR_ID)) {
+      directorId = entity.getLong(COLUMN_DIRECTOR_ID);
     }
-    if (entity.contains(DATASTORE_CREATED)) {
-      created = entity.getTimestamp(DATASTORE_CREATED);
+    if (entity.contains(COLUMN_CREATED)) {
+      created = entity.getTimestamp(COLUMN_CREATED);
     }
-    if (entity.contains(DATASTORE_MEDIA)) {
+    if (entity.contains(COLUMN_MEDIA)) {
       @SuppressWarnings("unchecked") List<EntityValue> mediaEntities =
-          entity.getList(DATASTORE_MEDIA);
+          entity.getList(COLUMN_MEDIA);
       mediaNodes = mediaEntities.stream()
           .map(entityValue -> Media.fromEntity(entityValue.get()))
           .collect(toList());
     }
-    if (entity.contains(DATASTORE_EDGES)) {
+    if (entity.contains(COLUMN_EDGES)) {
       @SuppressWarnings("unchecked") List<EntityValue> edgeEntities =
-          entity.getList(DATASTORE_EDGES);
+          entity.getList(COLUMN_EDGES);
       edges =
           edgeEntities.stream().map(entityValue -> new Edge(entityValue.get())).collect(toList());
     }
@@ -170,22 +172,33 @@ public class Scene extends BaseModel {
     this.created = created;
   }
 
-  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
-    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(BaseServlet servlet) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(servlet);
     if (created != null) {
-      builder.set(DATASTORE_CREATED, created);
+      builder.set(COLUMN_CREATED, created);
     }
     if (getDirectorId() != null) {
-      builder.set(DATASTORE_DIRECTOR_ID, getDirectorId());
+      builder.set(COLUMN_DIRECTOR_ID, getDirectorId());
     }
+    Map<Long, Long> clientIdToDatastoreId = new HashMap<>();
     if (mediaNodes != null && !mediaNodes.isEmpty()) {
-      builder.set(DATASTORE_MEDIA, mediaNodes.stream()
-          .map(media -> new EntityValue(media.toEntityBuilder(keyFactory).build()))
+      builder.set(COLUMN_MEDIA, mediaNodes.stream()
+          .map(media -> {
+            FullEntity.Builder mediaEntity = media.toEntityBuilder(servlet);
+            Key newKey =
+                servlet.getDatastore().allocateId(servlet.getKeyFactory(Media.KIND).newKey());
+            //noinspection unchecked
+            mediaEntity.setKey(newKey);
+            clientIdToDatastoreId.put(media.getId(), newKey.getId());
+            media.setId(newKey.getId());
+            return new EntityValue(mediaEntity.build());
+          })
           .collect(toList()));
     }
     if (edges != null && !edges.isEmpty()) {
-      builder.set(DATASTORE_EDGES, edges.stream()
-          .map(edge -> new EntityValue(edge.toEntityBuilder(keyFactory).build()))
+      edges.forEach(edge -> edge.updateIds(clientIdToDatastoreId));
+      builder.set(COLUMN_EDGES, edges.stream()
+          .map(edge -> new EntityValue(edge.toEntityBuilder(servlet).build()))
           .collect(toList()));
     }
     return builder;
@@ -220,6 +233,10 @@ public class Scene extends BaseModel {
     return director != null ? director.equals(scene.director) : scene.director == null;
   }
 
+  @Override String getKind() {
+    return KIND;
+  }
+
   public List<Edge> getEdges() {
     return edges;
   }
@@ -240,7 +257,7 @@ public class Scene extends BaseModel {
         saveMedia(i, req, servlet);
       }
     }
-    FullEntity entity = toEntityBuilder(servlet.getSceneKeyFactory()).build();
+    FullEntity entity = toEntityBuilder(servlet).build();
     Entity savedEntity = servlet.getDatastore().add(entity);
     id = savedEntity.getKey().getId();
   }

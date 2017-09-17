@@ -24,7 +24,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
     super.setUp();
     saveUser(director);
     saveUser(defaultUser);
-    scene = new Scene(director, NOW, Collections.singletonList(new Photo("")), null);
+    scene = new Scene(director, NOW, Collections.singletonList(new Photo(0L, "")), null);
   }
 
   @Test
@@ -86,7 +86,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
   @Test(expected = IOException.class)
   public void invalidEvent_userNotFound() throws Exception {
     saveScene(scene);
-    emptyDatastore(User.DATASTORE_KIND);
+    emptyDatastore(User.KIND);
     InteractionEvent interactionEvent =
         new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
             null, 0L);
@@ -127,7 +127,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
   @Test(expected = IOException.class)
   public void invalidEvent_sceneNotFound() throws Exception {
     saveScene(scene);
-    emptyDatastore(Scene.DATASTORE_KIND);
+    emptyDatastore(Scene.KIND);
     InteractionEvent interactionEvent =
         new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
             null, 0L);

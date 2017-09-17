@@ -1,9 +1,7 @@
 package com.truethat.backend.servlet;
 
 import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.KeyFactory;
 import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.common.annotations.VisibleForTesting;
@@ -35,13 +33,12 @@ public class TheaterServlet extends BaseServlet {
   static final int FETCH_LIMIT = 10;
 
   @SuppressWarnings("RedundantIfStatement")
-  static boolean isValidUser(Datastore datastore, KeyFactory userKeyFactory, User user,
-      StringBuilder errorBuilder) {
+  static boolean isValidUser(BaseServlet servlet, User user, StringBuilder errorBuilder) {
     if (user.getId() == null) {
       errorBuilder.append("missing user ID.");
       return false;
     }
-    if (datastore.get(userKeyFactory.newKey(user.getId())) == null) {
+    if (servlet.getDatastore().get(servlet.getKeyFactory(User.KIND).newKey(user.getId())) == null) {
       errorBuilder.append("user with ID ")
           .append(user.getId())
           .append(" not found.");
@@ -63,11 +60,11 @@ public class TheaterServlet extends BaseServlet {
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     if (user == null) throw new IOException("Missing user.");
     StringBuilder errorBuilder = new StringBuilder();
-    if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
+    if (!isValidUser(this, user, errorBuilder)) {
       throw new IOException("Invalid user: " + errorBuilder + ", input: " + user);
     }
-    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Scene.DATASTORE_KIND)
-        .setFilter(PropertyFilter.gt(Scene.DATASTORE_CREATED, Timestamp.ofTimeSecondsAndNanos(
+    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Scene.KIND)
+        .setFilter(PropertyFilter.gt(Scene.COLUMN_CREATED, Timestamp.ofTimeSecondsAndNanos(
             Timestamp.now().getSeconds() - TimeUnit.DAYS.toSeconds(1), 0)))
         .build();
     List<Scene> scenes = Lists.newArrayList(datastore.run(query))

@@ -33,7 +33,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
     theaterServlet.setDatastore(datastore);
     saveUser(director);
     saveUser(defaultUser);
-    scene = new Scene(director, NOW, Collections.singletonList(new Photo("")), null);
+    scene = new Scene(director, NOW, Collections.singletonList(new Photo(0L, "")), null);
   }
 
   @Test
@@ -87,7 +87,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
   public void fetchMultipleTypes() throws Exception {
     prepareFetch();
     saveScene(scene);
-    Scene videoScene = new Scene(director, NOW, Collections.singletonList(new Video("")), null);
+    Scene videoScene = new Scene(director, NOW, Collections.singletonList(new Video(0L, "")), null);
     saveScene(videoScene);
     resetResponseMock();
     // Sends the GET request
@@ -168,8 +168,7 @@ public class TheaterServletTest extends BaseServletTestSuite {
     for (int i = 0; i < TheaterServlet.FETCH_LIMIT + 1; i++) {
       saveScene(new Scene(director,
           Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()),
-          Collections.singletonList(new Photo(
-              "")),
+          Collections.singletonList(new Photo(0L, "")),
           null));
     }
     resetResponseMock();

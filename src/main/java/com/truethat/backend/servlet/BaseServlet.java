@@ -3,9 +3,8 @@ package com.truethat.backend.servlet;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.KeyFactory;
-import com.truethat.backend.model.InteractionEvent;
-import com.truethat.backend.model.Scene;
-import com.truethat.backend.model.User;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServlet;
 
 /**
@@ -13,12 +12,8 @@ import javax.servlet.http.HttpServlet;
  */
 public abstract class BaseServlet extends HttpServlet {
   Datastore datastore = DatastoreOptions.getDefaultInstance().getService();
-  KeyFactory userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
-  KeyFactory sceneKeyFactory =
-      datastore.newKeyFactory().setKind(Scene.DATASTORE_KIND);
-  KeyFactory eventKeyFactory =
-      datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
   SceneEnricher enricher = new SceneEnricher(datastore);
+  private Map<String, KeyFactory> keyFactories = new HashMap<>();
 
   public Datastore getDatastore() {
     return datastore;
@@ -26,13 +21,15 @@ public abstract class BaseServlet extends HttpServlet {
 
   public void setDatastore(Datastore datastore) {
     this.datastore = datastore;
-    userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
-    sceneKeyFactory = datastore.newKeyFactory().setKind(Scene.DATASTORE_KIND);
     enricher = new SceneEnricher(datastore);
-    eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
+    keyFactories = new HashMap<>();
   }
 
-  public KeyFactory getSceneKeyFactory() {
-    return sceneKeyFactory;
+  public KeyFactory getKeyFactory(String kind) {
+    if (!keyFactories.containsKey(kind)) {
+      keyFactories.put(kind, datastore.newKeyFactory().setKind(kind));
+    }
+
+    return keyFactories.get(kind);
   }
 }

@@ -2,8 +2,9 @@ package com.truethat.backend.model;
 
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
-import com.google.cloud.datastore.KeyFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.truethat.backend.common.Util;
+import com.truethat.backend.servlet.BaseServlet;
 import java.util.Objects;
 
 /**
@@ -26,27 +27,32 @@ public class Media extends BaseModel {
    */
   public static final String MEDIA_PART_PREFIX = "media_";
   /**
+   * Datastore kind.
+   */
+  public static final String KIND = "Media";
+  /**
    * Sub path for media items within the storage bucket.
    */
   static final String STORAGE_SUB_PATH = "media/";
   /**
    * Datastore column names.
    */
-  private static final String DATASTORE_URL = "url";
-  private static final String DATASTORE_TYPE = "type";
+  private static final String COLUMN_URL = "url";
+  private static final String COLUMN_TYPE = "type";
   /**
    * URL of media content as stored on Google storage.
    */
   private String url;
 
-  Media(String url) {
+  @VisibleForTesting Media(Long id, String url) {
+    super(id);
     this.url = url;
   }
 
   Media(FullEntity entity) {
     super(entity);
-    if (entity.contains(DATASTORE_URL)) {
-      url = entity.getString(DATASTORE_URL);
+    if (entity.contains(COLUMN_URL)) {
+      url = entity.getString(COLUMN_URL);
     }
   }
 
@@ -56,10 +62,10 @@ public class Media extends BaseModel {
    * @return a subtype of media that is built based on {@code entity}.
    */
   static Media fromEntity(FullEntity entity) {
-    if (entity.getString(DATASTORE_TYPE) == null) {
+    if (entity.getString(COLUMN_TYPE) == null) {
       throw new IllegalArgumentException("Entity is missing a type property");
     }
-    String type = entity.getString(DATASTORE_TYPE);
+    String type = entity.getString(COLUMN_TYPE);
     Media media = null;
     if (Objects.equals(type, Photo.class.getSimpleName())) {
       media = new Photo(entity);
@@ -70,11 +76,11 @@ public class Media extends BaseModel {
     return media;
   }
 
-  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
-    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
-    builder.set(DATASTORE_TYPE, this.getClass().getSimpleName());
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(BaseServlet servlet) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(servlet);
+    builder.set(COLUMN_TYPE, this.getClass().getSimpleName());
     if (url != null) {
-      builder.set(DATASTORE_URL, url);
+      builder.set(COLUMN_URL, url);
     }
     return builder;
   }
@@ -93,6 +99,10 @@ public class Media extends BaseModel {
     Media media = (Media) o;
 
     return url != null ? url.equals(media.url) : media.url == null;
+  }
+
+  @Override String getKind() {
+    return KIND;
   }
 
   public String getUrl() {

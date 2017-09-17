@@ -31,7 +31,7 @@ public class AuthServlet extends BaseServlet {
     User respondedUser = null;
     // Validating input
     if (user == null) throw new IOException("Missing user");
-    FullEntity userEntity = user.toEntityBuilder(userKeyFactory).build();
+    FullEntity userEntity = user.toEntityBuilder(this).build();
     // If ID is missing, then it is a sign up or a sign in.
     if (user.getId() == null) {
       Entity similarUserEntity = similarUser(user);
@@ -82,8 +82,8 @@ public class AuthServlet extends BaseServlet {
   private @Nullable Entity similarUser(User user) {
     Entity similarUserEntity = null;
     if (!Strings.isNullOrEmpty(user.getDeviceId())) {
-      Query<Entity> query = Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND)
-          .setFilter(StructuredQuery.PropertyFilter.eq(User.DATASTORE_DEVICE_ID,
+      Query<Entity> query = Query.newEntityQueryBuilder().setKind(User.KIND)
+          .setFilter(StructuredQuery.PropertyFilter.eq(User.COLUMN_DEVICE_ID,
               user.getDeviceId()))
           .build();
       QueryResults<Entity> existingUsers = datastore.run(query);
@@ -96,7 +96,7 @@ public class AuthServlet extends BaseServlet {
 
   private @Nullable Entity findUser(User user) {
     if (user.getId() != null) {
-      return datastore.get(userKeyFactory.newKey(user.getId()));
+      return datastore.get(getKeyFactory(User.KIND).newKey(user.getId()));
     }
     return null;
   }
@@ -113,13 +113,13 @@ public class AuthServlet extends BaseServlet {
   private Entity.Builder merge(Entity existing, User fromClient) {
     Entity.Builder builder = Entity.newBuilder(existing);
     if (!Strings.isNullOrEmpty(fromClient.getFirstName())) {
-      builder.set(User.DATASTORE_FIRST_NAME, fromClient.getFirstName());
+      builder.set(User.COLUMN_FIRST_NAME, fromClient.getFirstName());
     }
     if (!Strings.isNullOrEmpty(fromClient.getLastName())) {
-      builder.set(User.DATASTORE_LAST_NAME, fromClient.getLastName());
+      builder.set(User.COLUMN_LAST_NAME, fromClient.getLastName());
     }
     if (!Strings.isNullOrEmpty(fromClient.getDeviceId())) {
-      builder.set(User.DATASTORE_DEVICE_ID, fromClient.getDeviceId());
+      builder.set(User.COLUMN_DEVICE_ID, fromClient.getDeviceId());
     }
     return builder;
   }

@@ -3,8 +3,8 @@ package com.truethat.backend.model;
 import com.google.cloud.Timestamp;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
-import com.google.cloud.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
+import com.truethat.backend.servlet.BaseServlet;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
@@ -18,13 +18,13 @@ import javax.annotation.Nullable;
   /**
    * Datastore kind.
    */
-  public static final String DATASTORE_KIND = "User";
+  public static final String KIND = "User";
   // ----------------- Datastore column names -------------------------
-  public static final String DATASTORE_JOINED = "joined";
+  public static final String COLUMN_JOINED = "joined";
 
-  public static final String DATASTORE_DEVICE_ID = "deviceId";
-  public static final String DATASTORE_FIRST_NAME = "firstName";
-  public static final String DATASTORE_LAST_NAME = "lastName";
+  public static final String COLUMN_DEVICE_ID = "deviceId";
+  public static final String COLUMN_FIRST_NAME = "firstName";
+  public static final String COLUMN_LAST_NAME = "lastName";
 
   /**
    * Time of account creation.
@@ -45,17 +45,17 @@ import javax.annotation.Nullable;
 
   public User(FullEntity entity) {
     super(entity);
-    if (entity.contains(DATASTORE_FIRST_NAME)) {
-      firstName = entity.getString(DATASTORE_FIRST_NAME);
+    if (entity.contains(COLUMN_FIRST_NAME)) {
+      firstName = entity.getString(COLUMN_FIRST_NAME);
     }
-    if (entity.contains(DATASTORE_LAST_NAME)) {
-      lastName = entity.getString(DATASTORE_LAST_NAME);
+    if (entity.contains(COLUMN_LAST_NAME)) {
+      lastName = entity.getString(COLUMN_LAST_NAME);
     }
-    if (entity.contains(DATASTORE_DEVICE_ID)) {
-      deviceId = entity.getString(DATASTORE_DEVICE_ID);
+    if (entity.contains(COLUMN_DEVICE_ID)) {
+      deviceId = entity.getString(COLUMN_DEVICE_ID);
     }
-    if (entity.contains(DATASTORE_JOINED)) {
-      joined = entity.getTimestamp(DATASTORE_JOINED);
+    if (entity.contains(COLUMN_JOINED)) {
+      joined = entity.getTimestamp(COLUMN_JOINED);
     }
   }
 
@@ -67,18 +67,18 @@ import javax.annotation.Nullable;
     this.joined = joined;
   }
 
-  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
-    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(BaseServlet servlet) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(servlet);
     if (deviceId != null) {
-      builder.set(DATASTORE_DEVICE_ID, deviceId);
+      builder.set(COLUMN_DEVICE_ID, deviceId);
     }
     if (firstName != null) {
-      builder.set(DATASTORE_FIRST_NAME, firstName);
+      builder.set(COLUMN_FIRST_NAME, firstName);
     }
     if (lastName != null) {
-      builder.set(DATASTORE_LAST_NAME, lastName);
+      builder.set(COLUMN_LAST_NAME, lastName);
     }
-    builder.set(DATASTORE_JOINED, joined != null ? joined : Timestamp.now());
+    builder.set(COLUMN_JOINED, joined != null ? joined : Timestamp.now());
     return builder;
   }
 
@@ -95,6 +95,10 @@ import javax.annotation.Nullable;
     }
     if (lastName != null ? !lastName.equals(user.lastName) : user.lastName != null) return false;
     return Objects.equals(id, user.id);
+  }
+
+  @Override String getKind() {
+    return KIND;
   }
 
   public String getDeviceId() {

@@ -29,7 +29,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     repertoireServlet = new RepertoireServlet();
     repertoireServlet.setDatastore(datastore);
     saveUser(defaultUser);
-    scene = new Scene(defaultUser, NOW, Collections.singletonList(new Photo("")), null);
+    scene = new Scene(defaultUser, NOW, Collections.singletonList(new Photo(0L, "")), null);
   }
 
   @Test(expected = Exception.class)
@@ -105,9 +105,7 @@ public class RepertoireServletTest extends BaseServletTestSuite {
     for (int i = 0; i < RepertoireServlet.FETCH_LIMIT + 1; i++) {
       saveScene(new Scene(defaultUser,
           Timestamp.ofTimeSecondsAndNanos(NOW.getSeconds() + i, NOW.getNanos()),
-          Collections.singletonList(new Photo(
-              "")),
-          null));
+          Collections.singletonList(new Photo(0L, "")), null));
     }
     prepareFetch();
     repertoireServlet.doPost(mockRequest, mockResponse);

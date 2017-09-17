@@ -2,7 +2,8 @@ package com.truethat.backend.model;
 
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
-import com.google.cloud.datastore.KeyFactory;
+import com.truethat.backend.servlet.BaseServlet;
+import java.util.Map;
 
 /**
  * Proudly created by ohad on 11/09/2017.
@@ -15,78 +16,82 @@ import com.google.cloud.datastore.KeyFactory;
  */
 public class Edge extends BaseModel {
   /**
+   * Datastore kind.
+   */
+  private static final String KIND = "Edge";
+  /**
    * Datastore column names.
    */
-  private static final String DATASTORE_SOURCE = "source";
-  private static final String DATASTORE_TARGET = "target";
-  private static final String DATASTORE_REACTION = "reaction";
+  private static final String COLUMN_SOURCE = "source";
+  private static final String COLUMN_TARGET = "target";
+  private static final String COLUMN_REACTION = "reaction";
 
   /**
    * Index of media source node in {@link Scene#mediaNodes}, i.e. {@code photo1} in the above
    * example.
    */
-  private Long sourceIndex;
+  private Long sourceId;
 
   /**
    * Index of media target node in {@link Scene#mediaNodes}, i.e. {@code video1} in the above
    * example.
    */
-  private Long targetIndex;
+  private Long targetId;
 
   /**
    * Which reaction should trigger the follow up this edge describes.
    */
   private Emotion reaction;
 
-  public Edge(Long sourceIndex, Long targetIndex, Emotion reaction) {
-    this.sourceIndex = sourceIndex;
-    this.targetIndex = targetIndex;
+  public Edge(Long sourceId, Long targetId, Emotion reaction) {
+    this.sourceId = sourceId;
+    this.targetId = targetId;
     this.reaction = reaction;
   }
 
   Edge(FullEntity entity) {
     super(entity);
-    if (entity.contains(DATASTORE_SOURCE)) {
-      sourceIndex = entity.getLong(DATASTORE_SOURCE);
+    if (entity.contains(COLUMN_SOURCE)) {
+      sourceId = entity.getLong(COLUMN_SOURCE);
     }
-    if (entity.contains(DATASTORE_TARGET)) {
-      targetIndex = entity.getLong(DATASTORE_TARGET);
+    if (entity.contains(COLUMN_TARGET)) {
+      targetId = entity.getLong(COLUMN_TARGET);
     }
-    if (entity.contains(DATASTORE_REACTION)) {
-      reaction = Emotion.fromCode((int) entity.getLong(DATASTORE_REACTION));
+    if (entity.contains(COLUMN_REACTION)) {
+      reaction = Emotion.fromCode((int) entity.getLong(COLUMN_REACTION));
     }
   }
 
-  public Long getSourceIndex() {
-    return sourceIndex;
+  public Long getSourceId() {
+    return sourceId;
   }
 
-  public Long getTargetIndex() {
-    return targetIndex;
+  public Long getTargetId() {
+    return targetId;
   }
 
   public Emotion getReaction() {
     return reaction;
   }
 
-  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
-    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
-    if (sourceIndex != null) {
-      builder.set(DATASTORE_SOURCE, sourceIndex);
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(BaseServlet servlet) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(servlet);
+    if (sourceId != null) {
+      builder.set(COLUMN_SOURCE, sourceId);
     }
-    if (targetIndex != null) {
-      builder.set(DATASTORE_TARGET, targetIndex);
+    if (targetId != null) {
+      builder.set(COLUMN_TARGET, targetId);
     }
     if (reaction != null) {
-      builder.set(DATASTORE_REACTION, reaction.getCode());
+      builder.set(COLUMN_REACTION, reaction.getCode());
     }
     return builder;
   }
 
   @Override public int hashCode() {
     int result = super.hashCode();
-    result = 31 * result + (sourceIndex != null ? sourceIndex.hashCode() : 0);
-    result = 31 * result + (targetIndex != null ? targetIndex.hashCode() : 0);
+    result = 31 * result + (sourceId != null ? sourceId.hashCode() : 0);
+    result = 31 * result + (targetId != null ? targetId.hashCode() : 0);
     result = 31 * result + (reaction != null ? reaction.hashCode() : 0);
     return result;
   }
@@ -98,12 +103,31 @@ public class Edge extends BaseModel {
 
     Edge edge = (Edge) o;
 
-    if (sourceIndex != null ? !sourceIndex.equals(edge.sourceIndex) : edge.sourceIndex != null) {
+    if (sourceId != null ? !sourceId.equals(edge.sourceId) : edge.sourceId != null) {
       return false;
     }
-    if (targetIndex != null ? !targetIndex.equals(edge.targetIndex) : edge.targetIndex != null) {
+    if (targetId != null ? !targetId.equals(edge.targetId) : edge.targetId != null) {
       return false;
     }
     return reaction == edge.reaction;
+  }
+
+  @Override String getKind() {
+    return KIND;
+  }
+
+  /**
+   * Update deserialized IDs that were given by the client, with new IDs that are provided by
+   * datastore.
+   *
+   * @param oldIdToNewId maps old(client) IDs to new IDs (allocated by datastore).
+   */
+  void updateIds(Map<Long, Long> oldIdToNewId) {
+    if (oldIdToNewId.containsKey(sourceId)) {
+      sourceId = oldIdToNewId.get(sourceId);
+    }
+    if (oldIdToNewId.containsKey(targetId)) {
+      targetId = oldIdToNewId.get(targetId);
+    }
   }
 }

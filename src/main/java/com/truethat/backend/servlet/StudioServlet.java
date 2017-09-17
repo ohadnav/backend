@@ -5,11 +5,14 @@ import com.truethat.backend.common.Util;
 import com.truethat.backend.model.Edge;
 import com.truethat.backend.model.Media;
 import com.truethat.backend.model.Scene;
+import com.truethat.backend.model.User;
 import com.truethat.backend.storage.DefaultStorageClient;
 import com.truethat.backend.storage.StorageClient;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
+import java.util.HashSet;
+import java.util.Set;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -42,6 +45,10 @@ public class StudioServlet extends BaseServlet {
 
   public StorageClient getStorageClient() {
     return storageClient;
+  }
+
+  void setStorageClient(StorageClient storageClient) {
+    this.storageClient = storageClient;
   }
 
   @Override
@@ -91,10 +98,6 @@ public class StudioServlet extends BaseServlet {
     }
   }
 
-  void setStorageClient(StorageClient storageClient) {
-    this.storageClient = storageClient;
-  }
-
   /**
    * @return whether the scene has a valid data, and can be saved.
    */
@@ -109,7 +112,7 @@ public class StudioServlet extends BaseServlet {
       errorBuilder.append("missing director ID.");
       return false;
     }
-    if (datastore.get(userKeyFactory.newKey(scene.getDirector().getId())) == null) {
+    if (datastore.get(getKeyFactory(User.KIND).newKey(scene.getDirector().getId())) == null) {
       errorBuilder.append("director(i.e. a user) with ID ")
           .append(scene.getDirectorId())
           .append(" not found.");
@@ -118,6 +121,19 @@ public class StudioServlet extends BaseServlet {
     if (scene.getCreated() == null) {
       errorBuilder.append("missing created timestamp");
       return false;
+    }
+    // Validate media nodes
+    Set<Long> mediaIds = new HashSet<>();
+    for (Media media : scene.getMediaNodes()) {
+      if (media.getId() == null) {
+        errorBuilder.append("a media item is missing an ID.");
+        return false;
+      }
+      if (mediaIds.contains(media.getId())) {
+        errorBuilder.append("duplicate media IDs.");
+        return false;
+      }
+      mediaIds.add(media.getId());
     }
     // Validate edges
     if (scene.getMediaNodes().size() <= 1 && (scene.getEdges() != null && !scene.getEdges()
@@ -138,16 +154,16 @@ public class StudioServlet extends BaseServlet {
       return false;
     }
     for (Edge edge : scene.getEdges()) {
-      if (edge.getSourceIndex() == null) {
+      if (edge.getSourceId() == null) {
         errorBuilder.append("edge (")
             .append(edge)
-            .append(") is missing a source index.");
+            .append(") is missing a source ID.");
         return false;
       }
-      if (edge.getTargetIndex() == null) {
+      if (edge.getTargetId() == null) {
         errorBuilder.append("edge (")
             .append(edge)
-            .append(") is missing a target index.");
+            .append(") is missing a target ID.");
         return false;
       }
       if (edge.getReaction() == null) {
@@ -156,46 +172,31 @@ public class StudioServlet extends BaseServlet {
             .append(") is missing a reaction.");
         return false;
       }
-      if (edge.getSourceIndex() >= edge.getTargetIndex()) {
+      if (!mediaIds.contains(edge.getSourceId())) {
         errorBuilder.append("edge (")
             .append(edge)
-            .append(") source index must be smaller than target index.");
+            .append(") source ID has no matching media node.");
         return false;
       }
-      if (edge.getSourceIndex() < 0) {
+      if (!mediaIds.contains(edge.getTargetId())) {
         errorBuilder.append("edge (")
             .append(edge)
-            .append(") source index mustn't be negative");
-        return false;
-      }
-      if (edge.getTargetIndex() >= scene.getMediaNodes().size()) {
-        errorBuilder.append("edge (")
-            .append(edge)
-            .append(") target index must be smaller than number of media items.");
+            .append(") target ID has no matching media node.");
         return false;
       }
     }
-    boolean foundRootNode = false;
-    for (Edge edge : scene.getEdges()) {
-      if (edge.getSourceIndex() == 0) {
-        foundRootNode = true;
-        break;
-      }
-    }
-    if (!foundRootNode) {
-      errorBuilder.append("missing root media note, 0-th media is expected to be that node.");
-      return false;
-    }
+    // Ensures the edges represent a tree.
     boolean[] isReachable = new boolean[scene.getMediaNodes().size()];
-    isReachable[0] = true;
     for (Edge edge : scene.getEdges()) {
-      isReachable[edge.getTargetIndex().intValue()] = true;
+      isReachable[edge.getTargetId().intValue()] = true;
     }
-    for (int i = 0; i < isReachable.length; i++) {
-      if (!isReachable[i]) {
-        errorBuilder.append(i).append("-th media node is unreachable.");
-        return false;
-      }
+    int countRoots = 0;
+    for (boolean b : isReachable) {
+      if (!b) countRoots++;
+    }
+    if (countRoots > 1) {
+      errorBuilder.append("flow tree has not than one root.");
+      return false;
     }
     return true;
   }
