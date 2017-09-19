@@ -1,16 +1,21 @@
 package com.truethat.backend.servlet;
 
 import com.google.cloud.datastore.Entity;
+import com.google.cloud.datastore.EntityValue;
+import com.google.cloud.datastore.Key;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.InteractionEvent;
 import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.io.IOException;
+import java.util.Objects;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Proudly created by ohad on 03/07/2017.
@@ -26,6 +31,7 @@ public class InteractionServlet extends BaseServlet {
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
+    super.doPost(req, resp);
     InteractionEvent interactionEvent = Util.GSON.fromJson(req.getReader(), InteractionEvent.class);
     if (interactionEvent == null) throw new IOException("Missing interaction event");
     StringBuilder errorBuilder = new StringBuilder();
@@ -78,7 +84,7 @@ public class InteractionServlet extends BaseServlet {
       return false;
     }
     if (interactionEvent.getMediaId() == null) {
-      errorBuilder.append("missing media index.");
+      errorBuilder.append("missing media ID.");
       return false;
     }
     Entity entity = datastore.get(getKeyFactory(Scene.KIND).newKey(interactionEvent.getSceneId()));
@@ -87,15 +93,16 @@ public class InteractionServlet extends BaseServlet {
           .append(interactionEvent.getUserId())
           .append(" not found.");
       return false;
-    } else if (interactionEvent.getMediaId() >= entity.getList(Scene.COLUMN_MEDIA).size()
-        || interactionEvent.getMediaId() < 0) {
-      errorBuilder.append("media index ")
+    } else if (entity.getList(Scene.COLUMN_MEDIA)
+        .stream()
+        .filter(value -> Objects.equals(
+            ((Key) ((EntityValue) value).get().getKey()).getId(), interactionEvent.getMediaId()))
+        .collect(toList())
+        .isEmpty()) {
+      errorBuilder.append("media ID ")
           .append(interactionEvent.getMediaId())
-          .append(" is out of range [")
-          .append(0)
-          .append(" .. ")
-          .append(entity.getList(Scene.COLUMN_MEDIA).size() - 1)
-          .append("].");
+          .append(" is not part of scene ")
+          .append(interactionEvent.getSceneId());
       return false;
     }
     return true;

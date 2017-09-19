@@ -8,11 +8,12 @@ import com.google.cloud.datastore.IncompleteKey;
 import com.google.cloud.datastore.Key;
 import com.google.cloud.storage.BlobInfo;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.io.ByteStreams;
 import com.truethat.backend.servlet.BaseServlet;
 import com.truethat.backend.servlet.StudioServlet;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -78,6 +79,10 @@ public class Scene extends BaseModel {
    * {@link #directorId}.
    */
   private User director;
+  /**
+   * Maps media client IDs to datastore one.
+   */
+  private transient BiMap<Long, Long> clientIdToDatastoreId = HashBiMap.create();
 
   public Scene(FullEntity entity) {
     super(entity);
@@ -180,17 +185,13 @@ public class Scene extends BaseModel {
     if (getDirectorId() != null) {
       builder.set(COLUMN_DIRECTOR_ID, getDirectorId());
     }
-    Map<Long, Long> clientIdToDatastoreId = new HashMap<>();
     if (mediaNodes != null && !mediaNodes.isEmpty()) {
       builder.set(COLUMN_MEDIA, mediaNodes.stream()
           .map(media -> {
             FullEntity.Builder mediaEntity = media.toEntityBuilder(servlet);
-            Key newKey =
-                servlet.getDatastore().allocateId(servlet.getKeyFactory(Media.KIND).newKey());
+            Key newKey = servlet.getKeyFactory(Media.KIND).newKey(media.getId());
             //noinspection unchecked
             mediaEntity.setKey(newKey);
-            clientIdToDatastoreId.put(media.getId(), newKey.getId());
-            media.setId(newKey.getId());
             return new EntityValue(mediaEntity.build());
           })
           .collect(toList()));
@@ -253,8 +254,9 @@ public class Scene extends BaseModel {
    */
   public void save(HttpServletRequest req, StudioServlet servlet) throws Exception {
     if (mediaNodes != null) {
-      for (int i = 0; i < mediaNodes.size(); i++) {
-        saveMedia(i, req, servlet);
+      for (Media media : mediaNodes) {
+        updateMediaId(media, servlet);
+        saveMedia(media, req, servlet);
       }
     }
     FullEntity entity = toEntityBuilder(servlet).build();
@@ -264,35 +266,34 @@ public class Scene extends BaseModel {
 
   /**
    * Saves {@link #mediaNodes} to storage.
-   *
-   * @param mediaIndex to save.
+   *  @param media to save.
    * @param req        in which the scene is described.
    * @param servlet    from which the client requested the save.
    */
-  private void saveMedia(int mediaIndex, HttpServletRequest req,
-      StudioServlet servlet)
+  private void saveMedia(Media media, HttpServletRequest req, StudioServlet servlet)
       throws Exception {
-    Part part = req.getPart(generatePartName(mediaIndex));
-    if (part == null) throw new IOException("Missing " + generatePartName(mediaIndex) + " part");
-    String relativeUrl = getSaveDestination(mediaIndex, part);
+    Part part = req.getPart(generatePartName(media));
+    if (part == null) throw new IOException("Missing " + generatePartName(media) + " part");
+    String relativeUrl = getSaveDestination(media, part);
     BlobInfo blobInfo = servlet.getStorageClient().save(relativeUrl,
         part.getContentType(),
         ByteStreams.toByteArray(part.getInputStream()),
         servlet.getBucketName());
-    mediaNodes.get(mediaIndex).setUrl(servlet.getStorageClient().getPublicLink(blobInfo));
+    mediaNodes.get(mediaNodes.indexOf(media))
+        .setUrl(servlet.getStorageClient().getPublicLink(blobInfo));
   }
 
   /**
-   * @param mediaIndex to get a save path for
+   * @param media to get a save path for
    * @param part       of {@link #mediaNodes}
    *
    * @return sub path within the storage in which to save {@code media} content.
    */
-  private String getSaveDestination(int mediaIndex, Part part) {
+  private String getSaveDestination(Media media, Part part) {
     return Media.STORAGE_SUB_PATH
         + getDirectorId()
         + "/"
-        + mediaIndex
+        + media.getId()
         + "-"
         + created.getSeconds()
         + "-"
@@ -303,11 +304,24 @@ public class Scene extends BaseModel {
   }
 
   /**
-   * @param mediaIndex to query for
+   * @param media to query for
    *
-   * @return expected HTTP multipart name for media content of the {@code mediaIndex}-th item.
+   * @return expected HTTP multipart name for media content of the {@code mediaId}-th item.
    */
-  private String generatePartName(int mediaIndex) {
-    return Media.MEDIA_PART_PREFIX + mediaIndex;
+  private String generatePartName(Media media) {
+    return Media.MEDIA_PART_PREFIX + clientIdToDatastoreId.inverse().get(media.getId());
+  }
+
+  /**
+   * Updates {@code media} ID with a new ID allocated by datastore.
+   *
+   * @param media   to update
+   * @param servlet to obtain datastore and key factories.
+   */
+  private void updateMediaId(Media media, BaseServlet servlet) {
+    Key newKey =
+        servlet.getDatastore().allocateId(servlet.getKeyFactory(Media.KIND).newKey());
+    clientIdToDatastoreId.put(media.getId(), newKey.getId());
+    media.setId(newKey.getId());
   }
 }

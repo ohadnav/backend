@@ -27,6 +27,7 @@ public class AuthServlet extends BaseServlet {
 
   @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
+    super.doPost(req, resp);
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     User respondedUser = null;
     // Validating input

@@ -55,7 +55,7 @@ import javax.annotation.Nullable;
    */
   private Long sceneId;
   /**
-   * The {@link Media} index within {@link Scene#mediaNodes}.
+   * The {@link Media#getId()}.
    */
   private Long mediaId;
 

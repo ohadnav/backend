@@ -57,6 +57,7 @@ public class TheaterServlet extends BaseServlet {
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
+    super.doPost(req, resp);
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     if (user == null) throw new IOException("Missing user.");
     StringBuilder errorBuilder = new StringBuilder();

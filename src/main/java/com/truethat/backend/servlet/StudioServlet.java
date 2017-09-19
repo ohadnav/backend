@@ -74,6 +74,7 @@ public class StudioServlet extends BaseServlet {
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
+    super.doPost(req, resp);
     try {
       Part scenePart = req.getPart(Scene.SCENE_PART);
       if (scenePart == null) throw new IOException("Missing scene, how dare you?");
