@@ -8,6 +8,7 @@
 .idea/**/sqlDataSources.xml
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
+/projectFilesBackup/
 
 ### macOS template
 *.DS_Store
