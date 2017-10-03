@@ -292,11 +292,9 @@ public class Scene extends BaseModel {
   private String getSaveDestination(Media media, Part part) {
     return Media.STORAGE_SUB_PATH
         + getDirectorId()
-        + "/"
+        + "_"
         + media.getId()
-        + "-"
-        + created.getSeconds()
-        + "-"
+        + "_"
         + Math.round(
         Math.random() * 1000000000)
         + "."

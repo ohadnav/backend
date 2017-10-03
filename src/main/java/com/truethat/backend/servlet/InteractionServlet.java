@@ -102,7 +102,7 @@ public class InteractionServlet extends BaseServlet {
       errorBuilder.append("media ID ")
           .append(interactionEvent.getMediaId())
           .append(" is not part of scene ")
-          .append(interactionEvent.getSceneId());
+          .append(new Scene(entity));
       return false;
     }
     return true;

@@ -77,7 +77,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
   public void invalidEvent_missingUserId() throws Exception {
     saveScene(scene);
     InteractionEvent interactionEvent =
-        new InteractionEvent(null, scene.getId(), NOW, EventType.REACTION,
+        new InteractionEvent(null, scene.getId(), NOW, EventType.VIEW,
             null, scene.getMediaNodes().get(0).getId());
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -88,7 +88,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
     saveScene(scene);
     emptyDatastore(User.KIND);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
+        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.VIEW,
             null, scene.getMediaNodes().get(0).getId());
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -98,7 +98,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
   public void invalidEvent_missingTimestamp() throws Exception {
     saveScene(scene);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), null, EventType.REACTION,
+        new InteractionEvent(defaultUser.getId(), scene.getId(), null, EventType.VIEW,
             null, scene.getMediaNodes().get(0).getId());
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -108,7 +108,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
   public void invalidEvent_missingSceneId() throws Exception {
     saveScene(scene);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), null, NOW, EventType.REACTION,
+        new InteractionEvent(defaultUser.getId(), null, NOW, EventType.VIEW,
             null, scene.getMediaNodes().get(0).getId());
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -118,7 +118,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
   public void invalidEvent_missingMediaId() throws Exception {
     saveScene(scene);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
+        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.VIEW,
             null, null);
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -129,7 +129,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
     saveScene(scene);
     emptyDatastore(Scene.KIND);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
+        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.VIEW,
             null, scene.getMediaNodes().get(0).getId());
     // Saves the event.
     saveInteraction(interactionEvent);
@@ -139,7 +139,7 @@ public class InteractionServletTest extends BaseServletTestSuite {
   public void invalidEvent_mediaIdDoesNotExist() throws Exception {
     saveScene(scene);
     InteractionEvent interactionEvent =
-        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.REACTION,
+        new InteractionEvent(defaultUser.getId(), scene.getId(), NOW, EventType.VIEW,
             null, scene.getMediaNodes().get(0).getId() + 1);
     // Saves the event.
     saveInteraction(interactionEvent);
