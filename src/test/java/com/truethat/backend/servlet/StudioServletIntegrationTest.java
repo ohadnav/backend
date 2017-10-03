@@ -7,10 +7,11 @@ import com.google.cloud.datastore.testing.LocalDatastoreHelper;
 import com.google.common.collect.Lists;
 import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Pose;
-import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Short;
+import com.truethat.backend.model.Media;
+import com.truethat.backend.model.Photo;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
+import com.truethat.backend.model.Video;
 import com.truethat.backend.storage.BaseStorageTestSuite;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
+import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
@@ -50,7 +52,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
   @Mock
   private Part mockFilePart;
   @Mock
-  private Part mockReactablePart;
+  private Part mockScenePart;
   private StringWriter responseWriter;
   private StudioServlet studioServlet;
   private AuthServlet authServlet;
@@ -85,70 +87,72 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
   }
 
   @Test
-  public void savePose() throws Exception {
-    // Saves pose director to datastore.
+  public void savePhoto() throws Exception {
+    // Saves scene director to datastore.
     saveUser(director);
     initResponseMock();
-    // Saves pose
-    Pose pose = new Pose(director, Timestamp.now(), null);
+    // Saves scene
+    Scene scene =
+        new Scene(director, Timestamp.now(), Collections.singletonList(new Photo(0L, "")), null);
     // Initializing request mock
     String fileName = "src/test/resources/servlet/1x1_pixel.jpg";
-    when(mockFilePart.getContentType()).thenReturn("image/jpeg");
+    when(mockFilePart.getContentType()).thenReturn("image/jpg");
     when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
-    when(mockReactablePart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(Util.GSON.toJson(pose)));
-    when(mockRequest.getPart(Pose.IMAGE_PART)).thenReturn(mockFilePart);
-    when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
+    when(mockScenePart.getInputStream()).thenReturn(
+        TestUtil.toInputStream(Util.GSON.toJson(scene)));
+    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "0")).thenReturn(mockFilePart);
+    when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(mockScenePart);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts that the reactable was saved into the Datastore.
-    Pose savedPose = (Pose) Lists.newArrayList(datastore.run(
-        Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND).build()))
+    // Asserts that the scene was saved into the Datastore.
+    Scene saved = Lists.newArrayList(datastore.run(
+        Query.newEntityQueryBuilder().setKind(Scene.KIND).build()))
         .stream()
-        .map(Reactable::fromEntity)
+        .map(Scene::new)
         .collect(toList())
         .get(0);
-    // Asserts that the pose's image is saved, and matches the uploaded one.
-    TestUtil.assertUrl(savedPose.getImageUrl(), HttpURLConnection.HTTP_OK,
+    // Asserts that the scene's image is saved, and matches the uploaded one.
+    TestUtil.assertUrl(saved.getMediaNodes().get(0).getUrl(), HttpURLConnection.HTTP_OK,
         new FileInputStream(new File(fileName)));
-    pose.setDirector(null);
-    pose.setDirectorId(director.getId());
-    pose.setId(savedPose.getId());
-    pose.setImageUrl(savedPose.getImageUrl());
-    assertEquals(pose, savedPose);
+    scene.setDirector(null);
+    scene.setDirectorId(director.getId());
+    scene.setId(saved.getId());
+    scene.getMediaNodes().get(0).setUrl(saved.getMediaNodes().get(0).getUrl());
+    assertEquals(scene, saved);
   }
 
   @Test
-  public void saveShort() throws Exception {
+  public void saveVideo() throws Exception {
     saveUser(director);
     initResponseMock();
-    // Saves pose
-    Short aShort = new Short(director, Timestamp.now(), null);
+    // Saves scene
+    Scene scene =
+        new Scene(director, Timestamp.now(), Collections.singletonList(new Video(0L, "")), null);
     // Initializing request mock
     String fileName = "src/test/resources/servlet/wink.mp4";
     when(mockFilePart.getContentType()).thenReturn("video/mp4");
     when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(new File(fileName)));
-    when(mockReactablePart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(Util.GSON.toJson(aShort)));
-    when(mockRequest.getPart(Short.VIDEO_PART)).thenReturn(mockFilePart);
-    when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
+    when(mockScenePart.getInputStream()).thenReturn(
+        TestUtil.toInputStream(Util.GSON.toJson(scene)));
+    when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + "0")).thenReturn(mockFilePart);
+    when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(mockScenePart);
     // Executes the POST request.
     studioServlet.doPost(mockRequest, mockResponse);
-    // Asserts that the reactable was saved into the Datastore.
-    Short savedShort = (Short) Lists.newArrayList(datastore.run(
-        Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND).build()))
+    // Asserts that the scene was saved into the Datastore.
+    Scene saved = Lists.newArrayList(datastore.run(
+        Query.newEntityQueryBuilder().setKind(Scene.KIND).build()))
         .stream()
-        .map(Reactable::fromEntity)
+        .map(Scene::new)
         .collect(toList())
         .get(0);
-    aShort.setDirector(null);
-    aShort.setDirectorId(director.getId());
-    aShort.setId(savedShort.getId());
-    aShort.setVideoUrl(savedShort.getVideoUrl());
-    assertEquals(aShort, savedShort);
-    // Asserts that the short's video is saved. We dont assert the uploaded file matches the
+    scene.setDirector(null);
+    scene.setDirectorId(director.getId());
+    scene.setId(saved.getId());
+    scene.getMediaNodes().get(0).setUrl(saved.getMediaNodes().get(0).getUrl());
+    assertEquals(scene, saved);
+    // Asserts that the video is saved. We dont assert the uploaded file matches the
     // original one, as it streamed to the client, and so cannot be fully matched.
-    TestUtil.assertUrl(savedShort.getVideoUrl(), HttpURLConnection.HTTP_OK, null);
+    TestUtil.assertUrl(saved.getMediaNodes().get(0).getUrl(), HttpURLConnection.HTTP_OK, null);
   }
 
   private void initResponseMock() throws Exception {

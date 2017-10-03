@@ -10,7 +10,7 @@ import com.google.common.collect.Lists;
 import com.truethat.backend.model.Emotion;
 import com.truethat.backend.model.EventType;
 import com.truethat.backend.model.InteractionEvent;
-import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.util.Iterator;
 import java.util.List;
@@ -26,35 +26,36 @@ import static java.util.stream.Collectors.toList;
 /**
  * Proudly created by ohad on 29/06/2017.
  */
-class ReactableEnricher {
+class SceneEnricher {
   Datastore datastore;
   private KeyFactory userKeyFactory;
 
-  ReactableEnricher(Datastore datastore) {
+  SceneEnricher(Datastore datastore) {
     this.datastore = datastore;
-    userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
+    userKeyFactory = datastore.newKeyFactory().setKind(User.KIND);
   }
 
   /**
-   * Enriches {@link Reactable}s with data of {@link User} and {@link InteractionEvent}s.
-   *  @param reactables to enrichReactables
-   * @param user       for which to enrichReactables the reactables.
-   */
-  void enrichReactables(List<Reactable> reactables,
-      User user) {
-    enrichUsers(reactables);
-    enrichEvents(reactables, user);
-  }
-
-  /**
-   * Enriches {@link Reactable}s with data of {@link Reactable#director} first and last names.
+   * Enriches {@link Scene}s with data of {@link User} and {@link InteractionEvent}s.
    *
-   * @param reactables to enrichReactables
+   * @param scenes to enrichScenes
+   * @param user   for which to enrichScenes the scenes.
    */
-  private void enrichUsers(List<Reactable> reactables) {
-    Map<Long, List<Reactable>> reactableByDirectorId = reactables.stream().collect(groupingBy(
-        Reactable::getDirectorId, toList()));
-    List<Key> directorsEntitiesKeys = reactableByDirectorId.keySet()
+  void enrichScenes(List<Scene> scenes,
+      User user) {
+    enrichUsers(scenes);
+    enrichEvents(scenes, user);
+  }
+
+  /**
+   * Enriches {@link Scene}s with data of {@link Scene#director} first and last names.
+   *
+   * @param scenes to enrichScenes
+   */
+  private void enrichUsers(List<Scene> scenes) {
+    Map<Long, List<Scene>> sceneByDirectorId = scenes.stream().collect(groupingBy(
+        Scene::getDirectorId, toList()));
+    List<Key> directorsEntitiesKeys = sceneByDirectorId.keySet()
         .stream()
         .map(directorId -> userKeyFactory.newKey(directorId))
         .collect(toList());
@@ -62,23 +63,24 @@ class ReactableEnricher {
     while (directorEntities.hasNext()) {
       User director = new User(directorEntities.next());
       director.deletePrivateData();
-      for (Reactable reactable : reactableByDirectorId.get(director.getId())) {
-        reactable.setDirector(director);
+      for (Scene scene : sceneByDirectorId.get(director.getId())) {
+        scene.setDirector(director);
       }
     }
   }
 
   /**
-   * Enriches {@link Reactable}s with data of {@link Reactable#director} first and last names.
-   *  @param reactables to enrichReactables
-   * @param user       for which to enrichReactables the reactables.
+   * Enriches {@link Scene}s with data of {@link Scene#director} first and last names.
+   *
+   * @param scenes to enrichScenes
+   * @param user   for which to enrichScenes the scenes.
    */
-  private void enrichEvents(List<Reactable> reactables, User user) {
-    for (Reactable reactable : reactables) {
-      boolean isUserDirector = Objects.equals(user.getId(), reactable.getDirectorId());
-      Query<Entity> query = Query.newEntityQueryBuilder().setKind(InteractionEvent.DATASTORE_KIND)
-          .setFilter(StructuredQuery.PropertyFilter.eq(InteractionEvent.DATASTORE_REACTABLE_ID,
-              reactable.getId())).build();
+  private void enrichEvents(List<Scene> scenes, User user) {
+    for (Scene scene : scenes) {
+      boolean isUserDirector = Objects.equals(user.getId(), scene.getDirectorId());
+      Query<Entity> query = Query.newEntityQueryBuilder().setKind(InteractionEvent.KIND)
+          .setFilter(StructuredQuery.PropertyFilter.eq(InteractionEvent.COLUMN_SCENE_ID,
+              scene.getId())).build();
       List<InteractionEvent> interactionEvents = Lists.newArrayList(datastore.run(query))
           .stream()
           .map(InteractionEvent::new)
@@ -88,13 +90,13 @@ class ReactableEnricher {
           // Filter for reaction event not of the user.
           .filter(
               interaction -> interaction.getEventType() == EventType.REACTION
-                  && !Objects.equals(interaction.getUserId(), reactable.getDirectorId()))
+                  && !Objects.equals(interaction.getUserId(), scene.getDirectorId()))
           // Group by reactions
           .collect(groupingBy(InteractionEvent::getReaction,
               // Group by user IDs, to avoid duplicates
               collectingAndThen(groupingBy(InteractionEvent::getUserId, counting()),
                   userIds -> (long) userIds.keySet().size())));
-      reactable.setReactionCounters(reactionCounters);
+      scene.setReactionCounters(reactionCounters);
       // Determine user reaction.
       if (!isUserDirector) {
         // Find a reaction event of user.
@@ -103,20 +105,20 @@ class ReactableEnricher {
                 && interaction.getEventType() == EventType.REACTION)
             .findAny();
         reactionEvent.ifPresent(
-            interaction -> reactable.setUserReaction(interaction.getReaction()));
+            interaction -> scene.setUserReaction(interaction.getReaction()));
       }
-      // Determine whether {@code reactable} was viewed by {@code user}.
+      // Determine whether {@code scene} was viewed by {@code user}.
       // if the user is the director, then mark as viewed.
       if (isUserDirector) {
-        reactable.setViewed(true);
+        scene.setViewed(true);
       }
-      boolean viewed = reactable.isViewed();
+      boolean viewed = scene.isViewed();
       if (!viewed) {
         viewed = interactionEvents.stream()
             .anyMatch(interaction -> Objects.equals(interaction.getUserId(), user.getId())
                 && interaction.getEventType() == EventType.VIEW);
       }
-      reactable.setViewed(viewed);
+      scene.setViewed(viewed);
     }
   }
 }

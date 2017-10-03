@@ -6,16 +6,21 @@ package com.truethat.backend.model;
  * @android <a>https://github.com/true-that/android/blob/master/app/src/main/java/com/truethat/android/model/EventType.java</a>
  * @ios <a>https://github.com/true-that/ios/blob/master/TrueThat/Model/EventType.swift</a>
  */
-public enum EventType {
+// Next available - 4
+@SuppressWarnings("unused") public enum EventType {
   /**
-   * User viewed a reactable.
+   * User viewed a scene.
    */
   VIEW(1),
 
   /**
-   * User reacted to a reactable.
+   * User reacted to a scene.
    */
-  REACTION(2);
+  REACTION(2),
+  /**
+   * User reported a scene or a media as inappropriate.
+   */
+  REPORT(3);
 
   private int code;
 

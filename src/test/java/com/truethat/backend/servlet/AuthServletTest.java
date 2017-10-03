@@ -29,7 +29,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     // Assert the saved user matches the provided one, and has a join date.
     assertNotNull(userEntity);
     assertEquals(defaultUser, new User(userEntity));
-    assertTrue(userEntity.contains(User.DATASTORE_JOINED));
+    assertTrue(userEntity.contains(User.COLUMN_JOINED));
     // Assert the response contains a user ID, and matches the provided one.
     String response = responseWriter.toString();
     User respondedUser = Util.GSON.fromJson(response, User.class);
@@ -43,7 +43,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     saveUser(defaultUser);
     // Retrieves the saved user from datastore.
     List<User> savedUsers = Lists.newArrayList(
-        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.KIND).build()))
         .stream()
         .map(User::new)
         .collect(toList());
@@ -61,7 +61,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     saveUser(user);
     // Retrieves the saved user from datastore.
     User savedUser = Lists.newArrayList(
-        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.KIND).build()))
         .stream()
         .map(User::new)
         .collect(toList())
@@ -75,7 +75,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     saveUser(user);
     // Retrieves the all saved users.
     List<User> savedUsers = Lists.newArrayList(
-        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.KIND).build()))
         .stream()
         .map(User::new)
         .collect(toList());
@@ -100,7 +100,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     assertEquals(defaultUser, response);
     // Should not save additional entity
     List<User> savedUsers = Lists.newArrayList(
-        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.KIND).build()))
         .stream()
         .map(User::new)
         .collect(toList());
@@ -118,7 +118,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     // We cant test for status code :-(
     assertTrue(responseWriter.toString().isEmpty());
     // Should not save any users
-    assertFalse(datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build())
+    assertFalse(datastore.run(Query.newEntityQueryBuilder().setKind(User.KIND).build())
         .hasNext());
   }
 
@@ -132,7 +132,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     authServlet.doPost(mockRequest, mockResponse);
     // Should update data
     List<User> savedUsers = Lists.newArrayList(
-        datastore.run(Query.newEntityQueryBuilder().setKind(User.DATASTORE_KIND).build()))
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.KIND).build()))
         .stream()
         .map(User::new)
         .collect(toList());
@@ -149,37 +149,37 @@ public class AuthServletTest extends BaseServletTestSuite {
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_missingFirstName() throws Exception {
+  public void fetchScenes_missingFirstName() throws Exception {
     defaultUser.setFirstName(null);
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_invalidFirstName_tooShort() throws Exception {
+  public void fetchScenes_invalidFirstName_tooShort() throws Exception {
     defaultUser.setFirstName("a");
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_invalidFirstName_illegalCharacters() throws Exception {
+  public void fetchScenes_invalidFirstName_illegalCharacters() throws Exception {
     defaultUser.setFirstName("aaa5ff");
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_missingLastName() throws Exception {
+  public void fetchScenes_missingLastName() throws Exception {
     defaultUser.setLastName(null);
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_invalidLastName_tooShort() throws Exception {
+  public void fetchScenes_invalidLastName_tooShort() throws Exception {
     defaultUser.setLastName("a");
     saveUser(defaultUser);
   }
 
   @Test(expected = IOException.class)
-  public void fetchReactables_invalidLastName_illegalCharacters() throws Exception {
+  public void fetchScenes_invalidLastName_illegalCharacters() throws Exception {
     defaultUser.setLastName("aaa5ff");
     saveUser(defaultUser);
   }

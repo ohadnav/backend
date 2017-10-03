@@ -13,10 +13,11 @@ import com.google.common.collect.Iterators;
 import com.truethat.backend.common.TestUtil;
 import com.truethat.backend.common.Util;
 import com.truethat.backend.model.InteractionEvent;
-import com.truethat.backend.model.Pose;
-import com.truethat.backend.model.Reactable;
-import com.truethat.backend.model.Short;
+import com.truethat.backend.model.Media;
+import com.truethat.backend.model.Photo;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
+import com.truethat.backend.model.Video;
 import com.truethat.backend.storage.LocalStorageClient;
 import com.truethat.backend.storage.StorageClient;
 import java.io.File;
@@ -37,6 +38,7 @@ import org.mockito.MockitoAnnotations;
 import org.threeten.bp.Duration;
 
 import static com.truethat.backend.common.TestUtil.toBufferedReader;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -58,10 +60,9 @@ public class BaseServletTestSuite {
   StringWriter responseWriter;
   StudioServlet studioServlet;
   AuthServlet authServlet;
+  SceneEnricher enricher;
   private InteractionServlet interactionServlet;
-  ReactableEnricher enricher;
-  @Mock private Part mockFilePart;
-  @Mock private Part mockReactablePart;
+  @Mock private Part mockScenePart;
 
   @BeforeClass
   public static void beforeClass() throws IOException, InterruptedException {
@@ -79,8 +80,8 @@ public class BaseServletTestSuite {
     // Initialize datastore
     HELPER.reset();
     datastore = HELPER.getOptions().getService();
-    userKeyFactory = datastore.newKeyFactory().setKind(User.DATASTORE_KIND);
-    eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.DATASTORE_KIND);
+    userKeyFactory = datastore.newKeyFactory().setKind(User.KIND);
+    eventKeyFactory = datastore.newKeyFactory().setKind(InteractionEvent.KIND);
     emptyDatastore(null);
     // Initialize Servlets
     resetResponseMock();
@@ -90,13 +91,18 @@ public class BaseServletTestSuite {
     authServlet.setDatastore(datastore);
     studioServlet = new StudioServlet();
     studioServlet.setDatastore(datastore);
-    enricher = new ReactableEnricher(datastore);
+    enricher = new SceneEnricher(datastore);
     // Setting up local services.
     StorageClient storageClient = new LocalStorageClient();
     storageClient.addBucket(studioServlet.getBucketName());
     studioServlet.setStorageClient(storageClient);
     // Initializes user
     defaultUser = new User(DEVICE_ID, FIRST_NAME, LAST_NAME, NOW);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    HELPER.reset();
   }
 
   /**
@@ -113,71 +119,48 @@ public class BaseServletTestSuite {
     datastore.delete(Iterators.toArray(result, Key.class));
   }
 
-  @After
-  public void tearDown() throws Exception {
-    HELPER.reset();
+  /**
+   * Prepares request and response mocks for {@link #saveScene(Scene)}.
+   *
+   * @param scene to save
+   */
+  void prepareSceneSave(Scene scene) throws Exception {
+    for (int i = 0; i < scene.getMediaNodes().size(); i++) {
+      File file = null;
+      Part mockFilePart = mock(Part.class);
+      if (scene.getMediaNodes().get(i) instanceof Photo) {
+        file = new File("src/test/resources/servlet/1x1_pixel.jpg");
+        when(mockFilePart.getContentType()).thenReturn("image/jpg");
+      } else if (scene.getMediaNodes().get(i) instanceof Video) {
+        file = new File("src/test/resources/servlet/wink.mp4");
+        when(mockFilePart.getContentType()).thenReturn("video/mp4");
+      }
+      if (file != null) {
+        when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(file));
+      }
+      when(mockRequest.getPart(Media.MEDIA_PART_PREFIX + i)).thenReturn(mockFilePart);
+    }
+    when(mockScenePart.getInputStream()).thenReturn(
+        TestUtil.toInputStream(Util.GSON.toJson(scene)));
+    when(mockRequest.getPart(Scene.SCENE_PART)).thenReturn(mockScenePart);
   }
 
   /**
-   * Prepares request and response mocks for {@link #savePose(Pose)}.
+   * Saves a scene to datastore and updates {@code scene} id.
    *
-   * @param reactable to save
+   * @param scene to save
    */
-  void preparePoseSave(Reactable reactable) throws Exception {
-    File file = new File("src/test/resources/servlet/1x1_pixel.jpg");
-    when(mockFilePart.getContentType()).thenReturn("image/jpeg");
-    when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(file));
-    when(mockReactablePart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(Util.GSON.toJson(reactable)));
-    when(mockRequest.getPart(Pose.IMAGE_PART)).thenReturn(mockFilePart);
-    when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
-  }
-
-  /**
-   * Saves a pose to datastore and updates {@code pose} id.
-   *
-   * @param pose to save
-   */
-  void savePose(Pose pose) throws Exception {
+  void saveScene(Scene scene) throws Exception {
     resetResponseMock();
-    preparePoseSave(pose);
+    prepareSceneSave(scene);
     studioServlet.doPost(mockRequest, mockResponse);
-    // Updates the pose id.
-    Pose respondedPose = Util.GSON.fromJson(responseWriter.toString(), Pose.class);
-    pose.setId(respondedPose.getId());
-    pose.setCreated(respondedPose.getCreated());
-    pose.setImageUrl(respondedPose.getImageUrl());
-  }
-
-  /**
-   * Saves a short to datastore and updates {@code toSave} id.
-   *
-   * @param toSave to save
-   */
-  void saveShort(Short toSave) throws Exception {
-    resetResponseMock();
-    prepareShortSave(toSave);
-    studioServlet.doPost(mockRequest, mockResponse);
-    // Updates the pose id.
-    Short respondedPose = Util.GSON.fromJson(responseWriter.toString(), Short.class);
-    toSave.setId(respondedPose.getId());
-    toSave.setCreated(respondedPose.getCreated());
-    toSave.setVideoUrl(respondedPose.getVideoUrl());
-  }
-
-  /**
-   * Prepares request and response mocks for {@link #saveShort(Short)}.
-   *
-   * @param reactable to save
-   */
-  private void prepareShortSave(Reactable reactable) throws Exception {
-    File file = new File("src/test/resources/servlet/wink.mp4");
-    when(mockFilePart.getContentType()).thenReturn("video/mp4");
-    when(mockFilePart.getInputStream()).thenReturn(new FileInputStream(file));
-    when(mockReactablePart.getInputStream()).thenReturn(
-        TestUtil.toInputStream(Util.GSON.toJson(reactable)));
-    when(mockRequest.getPart(Short.VIDEO_PART)).thenReturn(mockFilePart);
-    when(mockRequest.getPart(Reactable.REACTABLE_PART)).thenReturn(mockReactablePart);
+    // Updates the scene id.
+    Scene responded = Util.GSON.fromJson(responseWriter.toString(), Scene.class);
+    scene.setId(responded.getId());
+    scene.setCreated(responded.getCreated());
+    // Updates edges and media nodes
+    scene.setEdges(responded.getEdges());
+    scene.setMediaNodes(responded.getMediaNodes());
   }
 
   /**
@@ -190,7 +173,7 @@ public class BaseServletTestSuite {
     when(mockRequest.getReader()).thenReturn(
         toBufferedReader(Util.GSON.toJson(interactionEvent)));
     interactionServlet.doPost(mockRequest, mockResponse);
-    // Updates the pose id.
+    // Updates the scene id.
     InteractionEvent response =
         Util.GSON.fromJson(responseWriter.toString(), InteractionEvent.class);
     interactionEvent.setId(response.getId());
@@ -212,7 +195,6 @@ public class BaseServletTestSuite {
     User response = Util.GSON.fromJson(responseWriter.toString(), User.class);
     user.setId(response.getId());
     user.setJoined(response.getJoined());
-
   }
 
   void resetResponseMock() throws Exception {

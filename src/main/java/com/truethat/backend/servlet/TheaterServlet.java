@@ -1,15 +1,13 @@
 package com.truethat.backend.servlet;
 
 import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.KeyFactory;
 import com.google.cloud.datastore.Query;
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.truethat.backend.common.Util;
-import com.truethat.backend.model.Reactable;
+import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.io.IOException;
 import java.util.Comparator;
@@ -35,13 +33,12 @@ public class TheaterServlet extends BaseServlet {
   static final int FETCH_LIMIT = 10;
 
   @SuppressWarnings("RedundantIfStatement")
-  static boolean isValidUser(Datastore datastore, KeyFactory userKeyFactory, User user,
-      StringBuilder errorBuilder) {
+  static boolean isValidUser(BaseServlet servlet, User user, StringBuilder errorBuilder) {
     if (user.getId() == null) {
       errorBuilder.append("missing user ID.");
       return false;
     }
-    if (datastore.get(userKeyFactory.newKey(user.getId())) == null) {
+    if (servlet.getDatastore().get(servlet.getKeyFactory(User.KIND).newKey(user.getId())) == null) {
       errorBuilder.append("user with ID ")
           .append(user.getId())
           .append(" not found.");
@@ -50,36 +47,37 @@ public class TheaterServlet extends BaseServlet {
     return true;
   }
 
-  private static boolean isValidReactable(Reactable reactable) {
-    return reactable.getDirector() != null;
+  private static boolean isValidScene(Scene scene) {
+    return scene.getDirector() != null;
   }
 
   /**
-   * Retrieves {@link Reactable}s from the Datastore.
+   * Retrieves {@link Scene}s from the Datastore.
    */
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
+    super.doPost(req, resp);
     User user = Util.GSON.fromJson(req.getReader(), User.class);
     if (user == null) throw new IOException("Missing user.");
     StringBuilder errorBuilder = new StringBuilder();
-    if (!isValidUser(datastore, userKeyFactory, user, errorBuilder)) {
+    if (!isValidUser(this, user, errorBuilder)) {
       throw new IOException("Invalid user: " + errorBuilder + ", input: " + user);
     }
-    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Reactable.DATASTORE_KIND)
-        .setFilter(PropertyFilter.gt(Reactable.DATASTORE_CREATED, Timestamp.ofTimeSecondsAndNanos(
+    Query<Entity> query = Query.newEntityQueryBuilder().setKind(Scene.KIND)
+        .setFilter(PropertyFilter.gt(Scene.COLUMN_CREATED, Timestamp.ofTimeSecondsAndNanos(
             Timestamp.now().getSeconds() - TimeUnit.DAYS.toSeconds(1), 0)))
         .build();
-    List<Reactable> reactables = Lists.newArrayList(datastore.run(query))
+    List<Scene> scenes = Lists.newArrayList(datastore.run(query))
         .stream()
-        .map(Reactable::fromEntity)
-        .filter(reactable -> !Objects.equals(reactable.getDirectorId(), user.getId()))
+        .map(Scene::new)
+        .filter(scene -> !Objects.equals(scene.getDirectorId(), user.getId()))
         .collect(toList());
     // Sort by recency
-    reactables.sort(Comparator.comparing(Reactable::getCreated).reversed());
-    reactables = reactables.subList(0, Math.min(FETCH_LIMIT, reactables.size()));
-    enricher.enrichReactables(reactables, user);
-    reactables = reactables.stream().filter(TheaterServlet::isValidReactable).collect(toList());
-    resp.getWriter().print(Util.GSON.toJson(reactables));
+    scenes.sort(Comparator.comparing(Scene::getCreated).reversed());
+    scenes = scenes.subList(0, Math.min(FETCH_LIMIT, scenes.size()));
+    enricher.enrichScenes(scenes, user);
+    scenes = scenes.stream().filter(TheaterServlet::isValidScene).collect(toList());
+    resp.getWriter().print(Util.GSON.toJson(scenes));
   }
 }

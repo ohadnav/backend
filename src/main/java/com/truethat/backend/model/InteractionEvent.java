@@ -1,11 +1,10 @@
 package com.truethat.backend.model;
 
 import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.FullEntity;
 import com.google.cloud.datastore.IncompleteKey;
-import com.google.cloud.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
+import com.truethat.backend.servlet.BaseServlet;
 import javax.annotation.Nullable;
 
 /**
@@ -18,15 +17,16 @@ import javax.annotation.Nullable;
   /**
    * Datastore kind.
    */
-  public static final String DATASTORE_KIND = "InteractionEvent";
+  public static final String KIND = "InteractionEvent";
   /**
    * Datastore column names.
    */
-  private static final String DATASTORE_TIMESTAMP = "timestamp";
-  private static final String DATASTORE_USER_ID = "userId";
-  public static final String DATASTORE_REACTABLE_ID = "reactableId";
-  private static final String DATASTORE_EVENT_TYPE = "eventType";
-  private static final String DATASTORE_REACTION = "reaction";
+  public static final String COLUMN_SCENE_ID = "sceneId";
+  private static final String COLUMN_TIMESTAMP = "timestamp";
+  private static final String COLUMN_USER_ID = "userId";
+  private static final String COLUMN_EVENT_TYPE = "eventType";
+  private static final String COLUMN_REACTION = "reaction";
+  private static final String COLUMN_MEDIA_ID = "mediaId";
 
   /**
    * Client UTC timestamp
@@ -51,55 +51,66 @@ import javax.annotation.Nullable;
   private EventType eventType;
 
   /**
-   * Of the {@link Reactable} that was interacted with.
+   * Of the {@link Scene} that was interacted with.
    */
-  private Long reactableId;
+  private Long sceneId;
+  /**
+   * The {@link Media#getId()}.
+   */
+  private Long mediaId;
 
-  public InteractionEvent(Entity entity) {
+  public InteractionEvent(FullEntity entity) {
     super(entity);
-    if (entity.contains(DATASTORE_USER_ID)) {
-      userId = entity.getLong(DATASTORE_USER_ID);
+    if (entity.contains(COLUMN_USER_ID)) {
+      userId = entity.getLong(COLUMN_USER_ID);
     }
-    if (entity.contains(DATASTORE_EVENT_TYPE)) {
-      eventType = EventType.fromCode((int) entity.getLong(DATASTORE_EVENT_TYPE));
+    if (entity.contains(COLUMN_EVENT_TYPE)) {
+      eventType = EventType.fromCode((int) entity.getLong(COLUMN_EVENT_TYPE));
     }
-    if (entity.contains(DATASTORE_REACTION)) {
-      reaction = Emotion.fromCode((int) entity.getLong(DATASTORE_REACTION));
+    if (entity.contains(COLUMN_REACTION)) {
+      reaction = Emotion.fromCode((int) entity.getLong(COLUMN_REACTION));
     }
-    if (entity.contains(DATASTORE_REACTABLE_ID)) {
-      reactableId = entity.getLong(DATASTORE_REACTABLE_ID);
+    if (entity.contains(COLUMN_SCENE_ID)) {
+      sceneId = entity.getLong(COLUMN_SCENE_ID);
     }
-    if (entity.contains(DATASTORE_TIMESTAMP)) {
-      timestamp = entity.getTimestamp(DATASTORE_TIMESTAMP);
+    if (entity.contains(COLUMN_MEDIA_ID)) {
+      mediaId = entity.getLong(COLUMN_MEDIA_ID);
+    }
+    if (entity.contains(COLUMN_TIMESTAMP)) {
+      timestamp = entity.getTimestamp(COLUMN_TIMESTAMP);
     }
   }
+
   @VisibleForTesting
-  public InteractionEvent(Long userId, Long reactableId, Timestamp timestamp, EventType eventType,
-      @Nullable
-      Emotion reaction) {
+  public InteractionEvent(Long userId, Long sceneId, Timestamp timestamp, EventType eventType,
+      @Nullable Emotion reaction, Long mediaId) {
     this.timestamp = timestamp;
     this.userId = userId;
     this.reaction = reaction;
     this.eventType = eventType;
-    this.reactableId = reactableId;
+    this.sceneId = sceneId;
+    this.mediaId = mediaId;
   }
 
-  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(KeyFactory keyFactory) {
-    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(keyFactory);
-    if (reactableId != null) {
-      builder.set(InteractionEvent.DATASTORE_REACTABLE_ID, reactableId);
+  @Override public FullEntity.Builder<IncompleteKey> toEntityBuilder(BaseServlet servlet) {
+    FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(servlet);
+    if (sceneId != null) {
+      builder.set(InteractionEvent.COLUMN_SCENE_ID, sceneId);
+    }
+    if (mediaId != null) {
+      builder.set(InteractionEvent.COLUMN_MEDIA_ID, mediaId);
     }
     if (timestamp != null) {
-      builder.set(InteractionEvent.DATASTORE_TIMESTAMP, timestamp);
+      builder.set(InteractionEvent.COLUMN_TIMESTAMP, timestamp);
     }
     if (eventType != null) {
-      builder.set(InteractionEvent.DATASTORE_EVENT_TYPE, eventType.getCode());
+      builder.set(InteractionEvent.COLUMN_EVENT_TYPE, eventType.getCode());
     }
     if (userId != null) {
-      builder.set(InteractionEvent.DATASTORE_USER_ID, userId);
+      builder.set(InteractionEvent.COLUMN_USER_ID, userId);
     }
     if (reaction != null) {
-      builder.set(InteractionEvent.DATASTORE_REACTION, reaction.getCode());
+      builder.set(InteractionEvent.COLUMN_REACTION, reaction.getCode());
     }
     return builder;
   }
@@ -110,7 +121,8 @@ import javax.annotation.Nullable;
     result = 31 * result + (userId != null ? userId.hashCode() : 0);
     result = 31 * result + (reaction != null ? reaction.hashCode() : 0);
     result = 31 * result + (eventType != null ? eventType.hashCode() : 0);
-    result = 31 * result + (reactableId != null ? reactableId.hashCode() : 0);
+    result = 31 * result + (sceneId != null ? sceneId.hashCode() : 0);
+    result = 31 * result + (mediaId != null ? mediaId.hashCode() : 0);
     return result;
   }
 
@@ -127,15 +139,24 @@ import javax.annotation.Nullable;
     if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
     if (reaction != that.reaction) return false;
     if (eventType != that.eventType) return false;
-    return reactableId != null ? reactableId.equals(that.reactableId) : that.reactableId == null;
+    if (sceneId != null ? !sceneId.equals(that.sceneId) : that.sceneId != null) return false;
+    return mediaId != null ? mediaId.equals(that.mediaId) : that.mediaId == null;
+  }
+
+  @Override String getKind() {
+    return KIND;
+  }
+
+  public Long getMediaId() {
+    return mediaId;
   }
 
   public Long getUserId() {
     return userId;
   }
 
-  public Long getReactableId() {
-    return reactableId;
+  public Long getSceneId() {
+    return sceneId;
   }
 
   public Emotion getReaction() {
