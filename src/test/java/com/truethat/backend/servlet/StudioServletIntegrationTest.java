@@ -83,7 +83,7 @@ public class StudioServletIntegrationTest extends BaseStorageTestSuite {
     authServlet.setDatastore(datastore);
     studioServlet.init(mockServletConfig);
     studioServlet.setBucketName(bucketName);
-    director = new User("my-iphone", "taylor", "swift", Timestamp.now());
+    director = new User("my-iphone", "+972485793", "taylor", "swift", Timestamp.now());
   }
 
   @Test

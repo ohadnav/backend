@@ -28,8 +28,8 @@ public class SceneEnricherTest extends BaseServletTestSuite {
   @Override public void setUp() throws Exception {
     super.setUp();
     // Adds the director of the scene to datastore
-    director = new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
-    friend = new User("my-phone", "the", "terminator", NOW);
+    director = new User(DEVICE_ID + "-2", PHONE_NUMBER + "2", FIRST_NAME, LAST_NAME, NOW);
+    friend = new User("my-phone", "+12344586973", "the", "terminator", NOW);
     saveUser(director);
     saveUser(friend);
     // Saves a scene.

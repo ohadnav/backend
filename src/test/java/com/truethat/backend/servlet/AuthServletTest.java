@@ -39,6 +39,7 @@ public class AuthServletTest extends BaseServletTestSuite {
   @Test
   public void similarUser_deviceId() throws Exception {
     saveUser(defaultUser);
+    defaultUser.setPhoneNumber(defaultUser.getPhoneNumber() + "1");
     defaultUser.setId(null);
     saveUser(defaultUser);
     // Retrieves the saved user from datastore.
@@ -56,8 +57,28 @@ public class AuthServletTest extends BaseServletTestSuite {
   }
 
   @Test
+  public void similarUser_phoneNumber() throws Exception {
+    saveUser(defaultUser);
+    defaultUser.setId(null);
+    defaultUser.setDeviceId(defaultUser.getDeviceId() + "1");
+    saveUser(defaultUser);
+    // Retrieves the saved user from datastore.
+    List<User> savedUsers = Lists.newArrayList(
+        datastore.run(Query.newEntityQueryBuilder().setKind(User.KIND).build()))
+        .stream()
+        .map(User::new)
+        .collect(toList());
+    // Assert only a single entity was saved.
+    assertEquals(1, savedUsers.size());
+    // Assert the response contains a user ID, and matches the provided one.
+    String response = responseWriter.toString();
+    User respondedUser = Util.GSON.fromJson(response, User.class);
+    assertEquals(defaultUser, respondedUser);
+  }
+
+  @Test
   public void updateUser() throws Exception {
-    User user = new User(DEVICE_ID, "old", "old", NOW);
+    User user = new User(DEVICE_ID, PHONE_NUMBER, "old", "old", NOW);
     saveUser(user);
     // Retrieves the saved user from datastore.
     User savedUser = Lists.newArrayList(
@@ -71,7 +92,7 @@ public class AuthServletTest extends BaseServletTestSuite {
     // Saves the first ID
     User firstUser = Util.GSON.fromJson(responseWriter.toString(), User.class);
     assertNotNull(firstUser.getId());
-    user = new User(DEVICE_ID, FIRST_NAME, LAST_NAME, NOW);
+    user = new User(DEVICE_ID, PHONE_NUMBER, FIRST_NAME, LAST_NAME, NOW);
     saveUser(user);
     // Retrieves the all saved users.
     List<User> savedUsers = Lists.newArrayList(

@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
   public static final String COLUMN_JOINED = "joined";
 
   public static final String COLUMN_DEVICE_ID = "deviceId";
+  public static final String COLUMN_PHONE_NUMBER = "phoneNumber";
   public static final String COLUMN_FIRST_NAME = "firstName";
   public static final String COLUMN_LAST_NAME = "lastName";
 
@@ -34,6 +35,10 @@ import javax.annotation.Nullable;
    * Psuedo-unique ID of user's device
    */
   private String deviceId;
+  /**
+   * User's primary phone number
+   */
+  private String phoneNumber;
   /**
    * How her mom calls her.
    */
@@ -54,14 +59,18 @@ import javax.annotation.Nullable;
     if (entity.contains(COLUMN_DEVICE_ID)) {
       deviceId = entity.getString(COLUMN_DEVICE_ID);
     }
+    if (entity.contains(COLUMN_PHONE_NUMBER)) {
+      phoneNumber = entity.getString(COLUMN_PHONE_NUMBER);
+    }
     if (entity.contains(COLUMN_JOINED)) {
       joined = entity.getTimestamp(COLUMN_JOINED);
     }
   }
 
-  @VisibleForTesting public User(@Nullable String deviceId,
+  @VisibleForTesting public User(@Nullable String deviceId, @Nullable String phoneNumber,
       @Nullable String firstName, @Nullable String lastName, Timestamp joined) {
     this.deviceId = deviceId;
+    this.phoneNumber= phoneNumber;
     this.firstName = firstName;
     this.lastName = lastName;
     this.joined = joined;
@@ -71,6 +80,9 @@ import javax.annotation.Nullable;
     FullEntity.Builder<IncompleteKey> builder = super.toEntityBuilder(servlet);
     if (deviceId != null) {
       builder.set(COLUMN_DEVICE_ID, deviceId);
+    }
+    if (phoneNumber!= null) {
+      builder.set(COLUMN_PHONE_NUMBER, phoneNumber);
     }
     if (firstName != null) {
       builder.set(COLUMN_FIRST_NAME, firstName);
@@ -90,6 +102,7 @@ import javax.annotation.Nullable;
 
     if (joined != null ? !joined.equals(user.joined) : user.joined != null) return false;
     if (deviceId != null ? !deviceId.equals(user.deviceId) : user.deviceId != null) return false;
+    if (phoneNumber != null ? !phoneNumber.equals(user.phoneNumber) : user.phoneNumber!= null) return false;
     if (firstName != null ? !firstName.equals(user.firstName) : user.firstName != null) {
       return false;
     }
@@ -105,12 +118,24 @@ import javax.annotation.Nullable;
     return deviceId;
   }
 
+  public String getPhoneNumber() {
+    return phoneNumber;
+  }
+
+  public void setPhoneNumber(String phoneNumber) {
+    this.phoneNumber = phoneNumber;
+  }
+
   public Timestamp getJoined() {
     return joined;
   }
 
   public void setJoined(Timestamp joined) {
     this.joined = joined;
+  }
+
+  public void setDeviceId(String deviceId) {
+    this.deviceId = deviceId;
   }
 
   public String getFirstName() {

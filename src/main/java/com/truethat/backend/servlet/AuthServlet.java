@@ -72,8 +72,7 @@ public class AuthServlet extends BaseServlet {
   }
 
   /**
-   * Creates a query that looks for similar users. Similar users share the same device ID or user
-   * ID.
+   * Creates a query that looks for similar users. Similar users share the same device ID or phone number.
    *
    * @param user that is being authenticated.
    *
@@ -82,10 +81,22 @@ public class AuthServlet extends BaseServlet {
    */
   private @Nullable Entity similarUser(User user) {
     Entity similarUserEntity = null;
+    // Looking for users with the same device ID
     if (!Strings.isNullOrEmpty(user.getDeviceId())) {
       Query<Entity> query = Query.newEntityQueryBuilder().setKind(User.KIND)
           .setFilter(StructuredQuery.PropertyFilter.eq(User.COLUMN_DEVICE_ID,
               user.getDeviceId()))
+          .build();
+      QueryResults<Entity> existingUsers = datastore.run(query);
+      if (existingUsers.hasNext()) {
+        similarUserEntity = existingUsers.next();
+      }
+    }
+    // Looking for users with the same phone number
+    if (!Strings.isNullOrEmpty(user.getPhoneNumber())) {
+      Query<Entity> query = Query.newEntityQueryBuilder().setKind(User.KIND)
+          .setFilter(StructuredQuery.PropertyFilter.eq(User.COLUMN_PHONE_NUMBER,
+              user.getPhoneNumber()))
           .build();
       QueryResults<Entity> existingUsers = datastore.run(query);
       if (existingUsers.hasNext()) {
@@ -121,6 +132,9 @@ public class AuthServlet extends BaseServlet {
     }
     if (!Strings.isNullOrEmpty(fromClient.getDeviceId())) {
       builder.set(User.COLUMN_DEVICE_ID, fromClient.getDeviceId());
+    }
+    if (!Strings.isNullOrEmpty(fromClient.getPhoneNumber())) {
+      builder.set(User.COLUMN_PHONE_NUMBER, fromClient.getPhoneNumber());
     }
     return builder;
   }

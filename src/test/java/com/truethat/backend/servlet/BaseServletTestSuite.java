@@ -46,6 +46,7 @@ import static org.mockito.Mockito.when;
  */
 public class BaseServletTestSuite {
   static final String DEVICE_ID = "my-iPhone";
+  static final String PHONE_NUMBER = "+1123456789";
   static final String FIRST_NAME = "django";
   static final String LAST_NAME = "the unchained";
   static final Timestamp NOW = Timestamp.now();
@@ -97,7 +98,7 @@ public class BaseServletTestSuite {
     storageClient.addBucket(studioServlet.getBucketName());
     studioServlet.setStorageClient(storageClient);
     // Initializes user
-    defaultUser = new User(DEVICE_ID, FIRST_NAME, LAST_NAME, NOW);
+    defaultUser = new User(DEVICE_ID, PHONE_NUMBER, FIRST_NAME, LAST_NAME, NOW);
   }
 
   @After

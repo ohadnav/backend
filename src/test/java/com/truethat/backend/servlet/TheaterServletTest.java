@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  */
 public class TheaterServletTest extends BaseServletTestSuite {
   private User director =
-      new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
+      new User(DEVICE_ID + "-2", PHONE_NUMBER + "2", FIRST_NAME, LAST_NAME, NOW);
   private Scene scene;
   private TheaterServlet theaterServlet;
 

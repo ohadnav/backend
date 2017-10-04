@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 public class InteractionServletTest extends BaseServletTestSuite {
   private Scene scene;
   private User director =
-      new User(DEVICE_ID + "-2", FIRST_NAME, LAST_NAME, NOW);
+      new User(DEVICE_ID + "-2", PHONE_NUMBER + "2", FIRST_NAME, LAST_NAME, NOW);
 
   @Override public void setUp() throws Exception {
     super.setUp();
