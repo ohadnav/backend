@@ -19,5 +19,5 @@ runtime_config:
 beta_settings:
   java_quickstart: true
 
-manual_scaling:
-  instances: 1
+automatic_scaling:
+  min_num_instances: 1
