@@ -8,6 +8,7 @@ import com.truethat.backend.model.Scene;
 import com.truethat.backend.model.User;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import static com.truethat.backend.common.TestUtil.toBufferedReader;
@@ -81,7 +82,9 @@ public class RepertoireServletTest extends BaseServletTestSuite {
   @Test
   public void recencyFilter() throws Exception {
     // Add a scene from an old timestamp
-    scene.setCreated(Timestamp.ofTimeSecondsAndNanos(Timestamp.now().getSeconds() - 86400 - 1, 0));
+    scene.setCreated(Timestamp.ofTimeSecondsAndNanos(
+        Timestamp.now().getSeconds() - TimeUnit.DAYS.toSeconds(TheaterServlet.DAYS_IN_STORY) - 1,
+        0));
     saveScene(scene);
     // Sends the GET request
     prepareFetch();

@@ -31,6 +31,10 @@ import static java.util.stream.Collectors.toList;
 public class TheaterServlet extends BaseServlet {
   @VisibleForTesting
   static final int FETCH_LIMIT = 10;
+  /**
+   * How old can fetched scenes by.
+   */
+  static final int DAYS_IN_STORY = 30;
 
   @SuppressWarnings("RedundantIfStatement")
   static boolean isValidUser(BaseServlet servlet, User user, StringBuilder errorBuilder) {
@@ -66,7 +70,7 @@ public class TheaterServlet extends BaseServlet {
     }
     Query<Entity> query = Query.newEntityQueryBuilder().setKind(Scene.KIND)
         .setFilter(PropertyFilter.gt(Scene.COLUMN_CREATED, Timestamp.ofTimeSecondsAndNanos(
-            Timestamp.now().getSeconds() - TimeUnit.DAYS.toSeconds(1), 0)))
+            Timestamp.now().getSeconds() - TimeUnit.DAYS.toSeconds(DAYS_IN_STORY), 0)))
         .build();
     List<Scene> scenes = Lists.newArrayList(datastore.run(query))
         .stream()

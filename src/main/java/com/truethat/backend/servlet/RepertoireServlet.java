@@ -18,6 +18,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static com.truethat.backend.servlet.TheaterServlet.DAYS_IN_STORY;
 import static com.truethat.backend.servlet.TheaterServlet.isValidUser;
 import static java.util.stream.Collectors.toList;
 
@@ -53,7 +54,7 @@ public class RepertoireServlet extends BaseServlet {
         .stream()
         .map(Scene::new)
         .filter(scene -> Timestamp.now().getSeconds() - scene.getCreated().getSeconds()
-            < TimeUnit.DAYS.toSeconds(1))
+            < TimeUnit.DAYS.toSeconds(DAYS_IN_STORY))
         .collect(toList());
     scenes.sort(Comparator.comparing(Scene::getCreated).reversed());
     scenes = scenes.subList(0, Math.min(FETCH_LIMIT, scenes.size()));
